@@ -1,0 +1,26 @@
+{
+  "name": "umc_chap04",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/Lidohyeon/umc-4th-assigment#readme",
+  "bugs": {
+    "url": "https://github.com/Lidohyeon/umc-4th-assigment/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lidohyeon/umc-4th-assigment.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mysql2": "^3.15.1"
+  }
+}
