@@ -146,3 +146,46 @@ export const addStore = async (data) => {
     }
 };
 
+export const addReview = async (data) => {
+    const conn = await pool.getConnection();
+
+    try {
+        const [confirm] = await pool.query(
+            `SELECT EXISTS(SELECT 1 FROM store WHERE id = ?) as isExistStore;`,
+            data.store_id
+        );
+
+        if (!confirm[0].isExistStore) {
+            return null;
+
+        }
+
+        const [maxId] = await pool.query(
+            `SELECT MAX(id) as maxId FROM review`
+        );
+        const nextId = (maxId[0].maxId || 0) + 1;
+
+
+        const [result] = await pool.query(
+            `INSERT INTO review (id, member_id, store_id, grade, description, created_at)
+            VALUES (?, ?, ?, ?, ?, ?);`,  // 파라미터 개수를 6개로 맞춤
+            [
+                nextId,
+                data.member_id,
+                data.store_id,
+                data.grade,
+                data.description,
+                data.created_at  // 서비스에서 전달받은 created_at 사용
+            ]
+        );
+
+        return nextId;
+
+    }
+    catch (err) {
+        throw new Error(`오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`);
+    } finally {
+        conn.release();
+    }
+
+}

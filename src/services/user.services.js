@@ -1,3 +1,4 @@
+import { Grade } from "@material-ui/icons";
 import { responseFromUser } from "../dtos/user.dtos.js";
 import {
     addUser,
@@ -5,6 +6,7 @@ import {
     getUserPreferencesByUserId,
     addStore,
     setPreference,
+    addReview
 } from "../repositories/user.repository.js";
 
 export const userSignUp = async (data) => {
@@ -59,3 +61,24 @@ export const addInsertStore = async (data) => {
 
     };
 };
+
+export const addMemReview = async (data) => {
+    const reviewData = {
+        member_id: data.member_id,
+        store_id: data.store_id,
+        grade: data.grade,
+        description: data.description,
+        created_at: new Date()  // 현재 시간 자동 추가
+    }
+
+    const reviewId = await addReview(reviewData);
+
+    if (reviewId === null) {
+        throw new Error("리뷰 등록에 실패했습니다.");
+    }
+    return {
+        id: reviewId,
+        ...reviewData
+    }
+
+}

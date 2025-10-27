@@ -1,3 +1,5 @@
+import { Description } from "@material-ui/icons";
+
 export const bodyToUser = (body) => {
     const birthdate = new Date(body.birthdate);
 
@@ -40,5 +42,14 @@ export const bodyToStore = (body) => {
         subscription: body.subscription,
         address: body.address,
         detail_address: body.detail_address
+    }
+}
+
+export const bodyToReview = (body) => {
+    return {
+        member_id: body.member_id,
+        store_id: body.store_id,
+        grade: body.grade,
+        description: body.description
     }
 }
