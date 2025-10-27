@@ -3,6 +3,7 @@ import {
     addUser,
     getUser,
     getUserPreferencesByUserId,
+    addStore,
     setPreference,
 } from "../repositories/user.repository.js";
 
@@ -34,4 +35,27 @@ export const userSignUp = async (data) => {
     const preferences = await getUserPreferencesByUserId(joinUserId);
 
     return responseFromUser({ user, preferences });
+};
+
+export const addInsertStore = async (data) => {
+    // 데이터 형식 변환
+    const storeData = {
+        name: data.name,
+        food_category_id: data.food_category_id,
+        subscription: data.subscription,
+        address: data.address,
+        detail_address: data.detail_address
+    };
+
+    const storeId = await addStore(storeData);
+
+    if (storeId === null) {
+        throw new Error("가게 등록에 실패했습니다.");
+    }
+
+    return {
+        id: storeId,
+        ...storeData
+
+    };
 };

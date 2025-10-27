@@ -33,3 +33,12 @@ export const responseFromUser = async ({ user, preferences }) => {
     }
 }
 
+export const bodyToStore = (body) => {
+    return {
+        name: body.name,
+        food_category_id: body.food_category_id,
+        subscription: body.subscription,
+        address: body.address,
+        detail_address: body.detail_address
+    }
+}

@@ -108,4 +108,41 @@ export const getUserPreferencesByUserId = async (userId) => {
     }
 };
 
+export const addStore = async (data) => {
+    const conn = await pool.getConnection();
+
+    try {
+        // food_category_id 타입 검증 및 변환
+        const foodCategoryId = Number(data.food_category_id);
+        if (isNaN(foodCategoryId)) {
+            throw new Error("올바른 food_category_id 값이 아닙니다.");
+        }
+
+        // 현재 최대 ID 값을 조회
+        const [maxId] = await pool.query(
+            `SELECT MAX(id) as maxId FROM store`
+        );
+        const nextId = (maxId[0].maxId || 0) + 1;
+
+        const [result] = await pool.query(
+            `INSERT INTO store (id, name, food_category_id, subscription, address, detail_address)
+            VALUES (?, ?, ?, ?, ?, ?);`,
+            [
+                nextId,
+                data.name,
+                foodCategoryId,  // 변환된 숫자 값 사용
+                data.subscription || '',
+                data.address || '',
+                data.detail_address || ''
+            ]
+        );
+
+        return nextId;
+    } catch (err) {
+        console.error("SQL 에러:", err);
+        throw new Error(`오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`);
+    } finally {
+        conn.release();
+    }
+};
 
