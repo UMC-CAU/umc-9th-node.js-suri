@@ -1,39 +1,24 @@
+import dotenv from "dotenv";
 import express from "express";
-import mysql from "mysql2";
+import cors from "cors";
+import { handleUserSignUp } from "./controllers/user.controller.js";
+
+dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const port = process.env.PORT;
 
-// DB 연결 설정
-const db = mysql.createConnection({
-    host: "localhost",
-    user: "root",       // MySQL 계정
-    password: "ehgus0328",
-    database: "mydb2" // 위에서 만든 DB 이름
-});
+app.use(cors());                            // cors 방식 허용
+app.use(express.static('public'));          // 정적 파일 접근
+app.use(express.json());                    // request의 본문을 json으로 해석할 수 있도록 함 (JSON 형태의 요청 body를 파싱하기 위함)
+app.use(express.urlencoded({ extended: false })); // 단순 객체 문자열 형태로 본문 데이터 해석
 
-// DB 연결 테스트
-db.connect(err => {
-    if (err) {
-        console.error("❌ DB 연결 실패:", err);
-    } else {
-        console.log("✅ DB 연결 성공");
-    }
-});
-
-// 루트 경로
 app.get("/", (req, res) => {
-    res.send("🚀 서버가 정상적으로 실행 중입니다!");
+    res.send("Hello World!");
 });
 
-// 간단한 API - user 목록 불러오기
-app.get("/users", (req, res) => {
-    db.query("SELECT * FROM member", (err, results) => {
-        if (err) {
-            return res.status(500).send("DB 조회 실패");
-        }
-        res.json(results);
-    });
-});
+app.post("/api/v1/users/signup", handleUserSignUp);
 
-app.listen(PORT, () => console.log(`🚀 Server on http://localhost:${PORT}`));
+app.listen(port, () => {
+    console.log(`Example app listening on port ${port}`);
+});
