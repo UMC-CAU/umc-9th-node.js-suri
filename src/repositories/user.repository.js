@@ -152,7 +152,7 @@ export const addReview = async (data) => {
     try {
         const [confirm] = await pool.query(
             `SELECT EXISTS(SELECT 1 FROM store WHERE id = ?) as isExistStore;`,
-            data.store_id
+            [data.store_id]
         );
 
         if (!confirm[0].isExistStore) {
@@ -187,5 +187,50 @@ export const addReview = async (data) => {
     } finally {
         conn.release();
     }
+
+}
+
+export const addMission = async (data) => {
+    const conn = await pool.getConnection();
+
+    try {
+        const [confirm] = await pool.query(
+            `SELECT EXISTS(SELECT 1 FROM store WHERE id = ?) as isExistStore;`,
+            [data.store_id]
+        );
+
+        if (!confirm[0].isExistStore) {
+            return null;
+        }
+
+        // review 테이블이 아닌 mission 테이블에서 MAX(id) 조회
+        const [maxId] = await pool.query(
+            `SELECT MAX(id) as maxId FROM mission`
+        );
+        const nextId = (maxId[0].maxId || 0) + 1;
+
+
+        const [result] = await pool.query(
+            `INSERT INTO mission (id, title, description, point_reward, store_id)
+            VALUES (?, ?, ?, ?, ?);`,
+            [
+                nextId,
+                data.title,
+                data.description,
+                data.point_reward,
+                data.store_id
+            ]
+        );
+
+        return nextId;
+
+    }
+    catch (err) {
+        throw new Error(`오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`);
+    } finally {
+        conn.release();
+    }
+
+
 
 }

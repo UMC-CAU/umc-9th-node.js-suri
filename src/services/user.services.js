@@ -6,7 +6,8 @@ import {
     getUserPreferencesByUserId,
     addStore,
     setPreference,
-    addReview
+    addReview,
+    addMission
 } from "../repositories/user.repository.js";
 
 export const userSignUp = async (data) => {
@@ -81,4 +82,30 @@ export const addMemReview = async (data) => {
         ...reviewData
     }
 
+}
+
+export const insertMission = async (data) => {
+    // store_id 유효성 검사 추가
+    if (!data.store_id) {
+        throw new Error("store_id는 필수 항목입니다.");
+    }
+
+    const missionData = {
+        title: data.title,
+        description: data.description,
+        point_reward: Number(data.point_reward),
+        store_id: Number(data.store_id)  // 명시적 숫자 변환
+    }
+
+    console.log("미션 데이터 확인:", missionData); // 디버깅용
+
+    const missionId = await addMission(missionData);
+
+    if (missionId === null) {
+        throw new Error("해당 가게가 존재하지 않습니다.");
+    }
+    return {
+        id: missionId,
+        ...missionData
+    }
 }

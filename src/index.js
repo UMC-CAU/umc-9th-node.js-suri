@@ -4,6 +4,7 @@ import cors from "cors";
 import { handleUserSignUp } from "./controllers/user.controller.js";
 import { handleStoreInsert } from "./controllers/user.controller.js";
 import { handleInsertReview } from "./controllers/user.controller.js";
+import { handleInsertMission } from "./controllers/user.controller.js";
 
 dotenv.config();
 
@@ -22,6 +23,8 @@ app.get("/", (req, res) => {
 app.post("/api/v1/users/signup", handleUserSignUp);
 app.post("/api/v1/store/insert", handleStoreInsert);
 app.post("/api/v1/users/reveiws", handleInsertReview);
+app.post("/api/v1/missions/insert", handleInsertMission);
+
 
 
 app.listen(port, () => {

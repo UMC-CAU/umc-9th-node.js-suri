@@ -53,3 +53,12 @@ export const bodyToReview = (body) => {
         description: body.description
     }
 }
+
+export const bodyToMission = (body) => {
+    return {
+        description: body.description,
+        title: body.title,
+        point_reward: body.point_reward,
+        store_id: body.store_id
+    }
+}
