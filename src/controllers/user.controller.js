@@ -11,6 +11,9 @@ import { addMemReview } from "../services/user.services.js";
 import { bodyToMission } from "../dtos/user.dtos.js";
 import { insertMission } from "../services/user.services.js";
 
+import { bodyToMemberMission } from "../dtos/user.dtos.js";
+import { startMission } from "../services/user.services.js";
+
 export const handleUserSignUp = async (req, res, next) => {
     console.log("회원가입을 요청했습니다!");
     console.log("body:", req.body); // 값이 잘 들어오나 확인하기 위한 테스트용
@@ -63,4 +66,21 @@ export const handleInsertMission = async (req, res) => {
             message: err.message
         });
     }
+}
+
+export const handleMissionStart = async (req, res) => {
+    try {
+        console.log("Request Data : ", req.body);
+
+        const missionData = bodyToMemberMission(req.body);
+        const result = await startMission(missionData);
+        return res.status(200).json(result);
+
+    } catch (err) {
+        console.error("에러:", err);
+        return res.status(400).json({
+            message: err.message
+        });
+    }
+
 }

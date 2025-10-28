@@ -62,3 +62,18 @@ export const bodyToMission = (body) => {
         store_id: body.store_id
     }
 }
+
+export const bodyToMemberMission = (body) => {
+
+
+    return {
+        member_id: body.member_id,
+        mission_id: body.mission_id,
+        address: body.address || null,
+        is_completed: body.is_completed || 0,
+        deadline: body.deadline,
+        activated: body.activated,
+        created_at: body.created_at,
+        updated_at: body.updated_at
+    }
+}

@@ -231,6 +231,80 @@ export const addMission = async (data) => {
         conn.release();
     }
 
+}
+
+export const startMemberMission = async (data) => {
+    const conn = await pool.getConnection();
+
+    try {
+        const [confirm] = await pool.query(
+            `SELECT EXISTS(SELECT * FROM member_mission 
+            WHERE mission_id = ? AND address = ? AND member_id = ?) as isExistMemberMission;`,
+            [data.mission_id, data.address, data.member_id]
+        );
+
+        if (!confirm[0].isExistMemberMission) { //member_mission에 존재하지 않을때 member_mission에 추가하기
+            const [maxId] = await pool.query(
+                `SELECT MAX(id) as maxId FROM member_mission`
+            );
+            const nextId = (maxId[0].maxId || 0) + 1;
+
+
+            const now = new Date();
+            const oneWeekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            const [result] = await pool.query(
+                `INSERT INTO member_mission (id, member_id, mission_id, created_at, updated_at, address, is_completed, deadline, activated)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+                [
+                    nextId,
+                    data.member_id,
+                    data.mission_id,
+                    new Date(),
+                    new Date(),
+                    data.address,
+                    data.is_completed,
+                    oneWeekLater, //deadline 현재로부터 일주일 뒤
+                    1 // member_mission에 추가되는 것은 결국 도전했다는 것 
+                ]
+            );
+            return nextId
+
+        }
+        else {
+            const [result] = await pool.query(
+                `SELECT * FROM member_mission 
+                WHERE mission_id = ? AND address = ? AND member_id = ?;`,
+                [data.mission_id, data.address, data.member_id]
+            );
+
+            console.log("조회된 미션:", result[0]);  // 전체 데이터 확인
+
+            if (result[0].activated === 1) {
+                return { message: "이미 활성화된 미션입니다." };
+            }
+            else {
+                const now = new Date();
+                const oneWeekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                // activated를 1로 업데이트 & 데드라인과 업데이트 시각 수정
+                const [updateResult] = await pool.query(
+                    `UPDATE member_mission 
+                    SET activated = 1, updated_at = ? , deadline = ?
+                    WHERE mission_id = ? AND address = ? AND member_id = ?;`,
+                    [new Date(), oneWeekLater, data.mission_id, data.address, data.member_id]
+                );
+
+                return result[0].id;
+
+            }
+
+        }
+    }
+    catch (err) {
+        throw new Error(`오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`);
+    } finally {
+        conn.release();
+    }
+
 
 
 }

@@ -7,7 +7,8 @@ import {
     addStore,
     setPreference,
     addReview,
-    addMission
+    addMission,
+    startMemberMission
 } from "../repositories/user.repository.js";
 
 export const userSignUp = async (data) => {
@@ -85,27 +86,46 @@ export const addMemReview = async (data) => {
 }
 
 export const insertMission = async (data) => {
-    // store_id 유효성 검사 추가
-    if (!data.store_id) {
-        throw new Error("store_id는 필수 항목입니다.");
-    }
-
     const missionData = {
         title: data.title,
         description: data.description,
-        point_reward: Number(data.point_reward),
-        store_id: Number(data.store_id)  // 명시적 숫자 변환
+        point_reward: data.point_reward,
+        store_id: data.store_id
     }
-
-    console.log("미션 데이터 확인:", missionData); // 디버깅용
 
     const missionId = await addMission(missionData);
 
     if (missionId === null) {
-        throw new Error("해당 가게가 존재하지 않습니다.");
+        throw new Error("리뷰 등록에 실패했습니다.");
     }
     return {
         id: missionId,
         ...missionData
     }
+
 }
+
+export const startMission = async (data) => {
+    const memmissionData = {
+        member_id: data.member_id,
+        mission_id: data.mission_id,
+        address: data.address,
+        is_completed: data.is_completed,
+        deadline: data.deadline,
+        activated: data.activated
+    }
+
+    const memmissionId = await startMemberMission(memmissionData);
+
+    if (memmissionId === null) {
+        throw new Error("이미 도전중인 미션입니다!");
+    }
+    return {
+        id: memmissionId,
+        ...memmissionData
+    }
+
+}
+
+//member_mission 형태로 바디를 요청하고 , 이 member_mission이 이미 존재하는지 확인 + activated = 1인지 확인 false 라면 null반환
+// member_mission에 존재하지 않다면 , insert member_mission한다. member_id =1로. 
