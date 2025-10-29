@@ -1,5 +1,6 @@
 import { Grade } from "@material-ui/icons";
 import { responseFromUser } from "../dtos/user.dtos.js";
+import crypto from 'crypto';
 import {
     addUser,
     getUser,
@@ -11,7 +12,14 @@ import {
     startMemberMission
 } from "../repositories/user.repository.js";
 
+// 간단한 해싱 함수 추가
+const hashPassword = (password) => {
+    return crypto.createHash('sha256').update(password).digest('hex');
+};
+
 export const userSignUp = async (data) => {
+    const hashedPassword = hashPassword(data.password); // 비밀번호 해싱
+
     const joinUserId = await addUser({
         email: data.email,
         name: data.name,
@@ -19,7 +27,7 @@ export const userSignUp = async (data) => {
         gender: data.gender,
         birthdate: data.birthdate,
         phoneNumber: data.phoneNumber,
-        password: data.password,
+        password: hashedPassword, // 해싱된 비밀번호 사용
         status: 'ACTIVE',
         point: '0',
         createdAt: new Date(),
@@ -128,4 +136,4 @@ export const startMission = async (data) => {
 }
 
 //member_mission 형태로 바디를 요청하고 , 이 member_mission이 이미 존재하는지 확인 + activated = 1인지 확인 false 라면 null반환
-// member_mission에 존재하지 않다면 , insert member_mission한다. member_id =1로. 
+// member_mission에 존재하지 않다면 , insert member_mission한다. member_id =1로.
