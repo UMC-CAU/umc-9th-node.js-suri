@@ -1,5 +1,4 @@
-import { pool } from "../db.config";
-import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
+import {prisma} from "../db.config";
 import type {
     memberEntityDB,
     MemberMissionCreateDTO,
@@ -7,6 +6,7 @@ import type {
     ReviewCreateDTO,
     StoreCreateDTO,
 } from "../dtos/user.dtos";
+import {createHash} from "crypto"
 
 // Payload used to insert a user into DB (subset of memberBodyToDTO)
 export interface UserInsertPayload {
@@ -18,7 +18,7 @@ export interface UserInsertPayload {
     phoneNumber: string;
     password: string;
     status: string | boolean;
-    point: number | string;
+    point: number;
     createdAt: Date;
     updatedAt: Date;
     lastLogin: Date;
@@ -28,69 +28,66 @@ export interface UserInsertPayload {
 export const addUser = async (
     data: UserInsertPayload,
 ): Promise<number | null> => {
-    const conn = await pool.getConnection();
+
     try {
-        const [confirm] = await pool.query<RowDataPacket[]>(
-            `SELECT EXISTS(SELECT 1 FROM member WHERE email = ?) as isExistEmail;`,
-            [data.email],
-        );
-
-        if (confirm[0]?.isExistEmail) {
-            return null;
+        const user = await prisma.member.findFirst({where: {email: data.email}})
+        if (user) {
+            return null
+        } else {
+            const hashedPassword = createHash("sha256")
+                .update(String(data.password))
+                .digest("hex");
+            const addnewUser = await prisma.member.create({
+                data: {
+                    email: data.email,
+                    name: data.name,
+                    nickname: data.nickname,
+                    gender: data.gender,
+                    birthdate: data.birthdate,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    status: String(data.status),
+                    lastLogin: new Date(),
+                    phoneNumber: data.phoneNumber,
+                    password: hashedPassword,
+                    point: Number(data.point)
+                }
+            });
+            return Number(addnewUser.id);
         }
-
-        const [result] = await pool.query<ResultSetHeader>(
-            `INSERT INTO member (email, name, nickname, gender, birthdate, phone_number,
-            password, status, point, created_at, updated_at, last_login)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-            [
-                data.email,
-                data.name,
-                data.nickname,
-                data.gender,
-                data.birthdate,
-                data.phoneNumber,
-                data.password,
-                data.status,
-                data.point,
-                data.createdAt,
-                data.updatedAt,
-                data.lastLogin,
-            ],
-        );
-
-        return result.insertId;
     } catch (err) {
         throw new Error(
             `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`,
         );
-    } finally {
-        conn.release();
     }
 };
 
 // Get single user by id
-export const getUser = async (userId: number): Promise<memberEntityDB> => {
-    const conn = await pool.getConnection();
+export const getUser = async (userId: number): Promise<memberEntityDB | null> => {
+
     try {
-        const [rows] = await pool.query<RowDataPacket[]>(
-            `SELECT * FROM member WHERE id = ?;`,
-            [userId],
-        );
-
-        if (!rows || rows.length === 0) {
-            throw new Error("User not found");
+        const user = await prisma.member.findFirst({where: {id: userId}});
+        if (!user) {
+            return null
         }
-
-        // RowDataPacket has any-typed fields, cast to our entity
-        return rows[0] as unknown as memberEntityDB;
+        return {
+            id: Number(user.id),
+            email: String(user.email),
+            name: String(user.name),
+            nickname: user.nickname ? String(user.nickname) : null,
+            gender: String(user.gender),
+            birthdate: new Date(String(user.birthdate)),
+            phone_number: String(user.phoneNumber),
+            point: Number(user.point),
+            status: Boolean(user.status),
+            created_at: new Date(String(user.createdAt)),
+            updated_at: new Date(String(user.updatedAt)),
+            last_login: new Date(String(user.lastLogin)),
+        };
     } catch (err) {
-        throw new Error(
-            `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`,
-        );
-    } finally {
-        conn.release();
+        throw new Error("The user does not exist. {" + err + "}");
     }
+
 };
 
 // Map preferred food category for a user; returns created id (manual incremental)
@@ -98,26 +95,16 @@ export const setPreference = async (
     userId: number,
     preferFood: string,
 ): Promise<number> => {
-    const conn = await pool.getConnection();
     try {
-        const [maxIdRows] = await pool.query<RowDataPacket[]>(
-            `SELECT MAX(id) as maxId FROM foodcategory WHERE member_id = ?;`,
-            [userId],
-        );
-        const nextId = (maxIdRows[0]?.maxId || 0) + 1;
-
-        await pool.query<ResultSetHeader>(
-                `INSERT INTO foodcategory (id, member_id, prefer_food) VALUES (?, ?, ?);`,
-                [nextId, userId, preferFood],
-            );
-
-        return nextId;
+        const newPref = await prisma.foodCategory.create({
+            data: {
+                memberId: Number(userId),
+                preferFood: String(preferFood),
+            }
+        });
+        return Number(newPref.id);
     } catch (err) {
-        throw new Error(
-            `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`,
-        );
-    } finally {
-        conn.release();
+        throw new Error("Error setting preference. {" + err + "}");
     }
 };
 
@@ -131,58 +118,40 @@ export interface PreferenceRow {
 export const getUserPreferencesByUserId = async (
     userId: number,
 ): Promise<PreferenceRow[]> => {
-    const conn = await pool.getConnection();
     try {
-        const [preferences] = await pool.query<RowDataPacket[]>(
-            `SELECT id, member_id, prefer_food FROM foodcategory WHERE member_id = ?;`,
-            [userId],
-        );
-        return preferences as unknown as PreferenceRow[];
+        const prefs = await prisma.foodCategory.findMany({
+            select: {id: true, memberId: true, preferFood: true},
+            where: {memberId: userId}
+        });
+        return prefs.map((row) => ({
+            id: Number(row.id),
+            member_id: Number(row.memberId),
+            prefer_food: String(row.preferFood),
+        })) as PreferenceRow[];
     } catch (err) {
-        throw new Error(
-            `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`,
-        );
-    } finally {
-        conn.release();
+        throw new Error("Error getting preferences. {" + err + "}");
     }
+
 };
 
 // Insert store; returns manual next id or null on invalid foreign keys
 export const addStore = async (
     data: StoreCreateDTO,
 ): Promise<number | null> => {
-    const conn = await pool.getConnection();
     try {
-        const foodCategoryId = Number(data.food_category_id);
-        if (Number.isNaN(foodCategoryId)) {
-            throw new Error("올바른 food_category_id 값이 아닙니다.");
-        }
+        const newStore = await prisma.store.create({
+            data: {
+                name: String(data.name),
+                foodCategoryId: Number(data.food_category_id),
+                subscription: String(data.subscription),
+                address: String(data.address),
+                detailAddress: String(data.detail_address),
+            }
+        });
+        return Number(newStore.id);
 
-        const [maxIdRows] = await pool.query<RowDataPacket[]>(
-            `SELECT MAX(id) as maxId FROM store`,
-        );
-        const nextId = (maxIdRows[0]?.maxId || 0) + 1;
-
-        await pool.query<ResultSetHeader>(
-            `INSERT INTO store (id, name, food_category_id, subscription, address, detail_address)
-            VALUES (?, ?, ?, ?, ?, ?);`,
-            [
-                nextId,
-                data.name,
-                foodCategoryId,
-                (data.subscription as any) ?? "",
-                data.address ?? "",
-                data.detail_address ?? "",
-            ],
-        );
-
-        return nextId;
     } catch (err) {
-        throw new Error(
-            `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`,
-        );
-    } finally {
-        conn.release();
+        throw new Error("Error setting preference. {" + err + "}");
     }
 };
 
@@ -194,42 +163,26 @@ export interface ReviewInsertPayload extends ReviewCreateDTO {
 export const addReview = async (
     data: ReviewInsertPayload,
 ): Promise<number | null> => {
-    const conn = await pool.getConnection();
     try {
-        const [confirm] = await pool.query<RowDataPacket[]>(
-            `SELECT EXISTS(SELECT 1 FROM store WHERE id = ?) as isExistStore;`,
-            [data.store_id],
-        );
 
-        if (!confirm[0]?.isExistStore) {
+        const confirmReview = await prisma.store.findFirst({where: {id: data.store_id}});
+        if (!confirmReview) {
             return null;
         }
+        const newReview = await prisma.review.create({
+            data:
+                {
+                    memberId: data.member_id,
+                    storeId: data.store_id,
+                    grade: String(data.grade),
+                    description: data.description,
+                    createdAt: new Date()
+                }
+        });
+        return Number(newReview.id);
 
-        const [maxIdRows] = await pool.query<RowDataPacket[]>(
-            `SELECT MAX(id) as maxId FROM review`,
-        );
-        const nextId = (maxIdRows[0]?.maxId || 0) + 1;
-
-        await pool.query<ResultSetHeader>(
-            `INSERT INTO review (id, member_id, store_id, grade, description, created_at)
-            VALUES (?, ?, ?, ?, ?, ?);`,
-            [
-                nextId,
-                data.member_id,
-                data.store_id,
-                data.grade,
-                data.description,
-                Date(),
-            ],
-        );
-
-        return nextId;
     } catch (err) {
-        throw new Error(
-            `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`,
-        );
-    } finally {
-        conn.release();
+        throw new Error("Error setting preference. {" + err + "}");
     }
 };
 
@@ -237,36 +190,25 @@ export const addReview = async (
 export const addMission = async (
     data: MissionCreateDTO,
 ): Promise<number | null> => {
-    const conn = await pool.getConnection();
     try {
-        const [confirm] = await pool.query<RowDataPacket[]>(
-            `SELECT EXISTS(SELECT 1 FROM store WHERE id = ?) as isExistStore;`,
-            [data.store_id],
-        );
-
-        if (!confirm[0]?.isExistStore) {
+        const confirmMission = await prisma.store.findFirst({where: {id: data.store_id}});
+        if (!confirmMission) {
             return null;
         }
-
-        const [maxIdRows] = await pool.query<RowDataPacket[]>(
-            `SELECT MAX(id) as maxId FROM mission`,
-        );
-        const nextId = (maxIdRows[0]?.maxId || 0) + 1;
-
-        await pool.query<ResultSetHeader>(
-            `INSERT INTO mission (id, title, description, point_reward, store_id)
-            VALUES (?, ?, ?, ?, ?);`,
-            [nextId, data.title, data.description, data.point_reward, data.store_id],
-        );
-
-        return nextId;
+        const newMission = await prisma.mission.create({
+            data:
+                {
+                    title: data.title,
+                    description: data.description,
+                    pointReward: data.point_reward,
+                    storeId: data.store_id
+                }
+        });
+        return Number(newMission.id);
     } catch (err) {
-        throw new Error(
-            `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`,
-        );
-    } finally {
-        conn.release();
+        throw new Error("Error setting preference. {" + err + "}");
     }
+
 };
 
 // Start/activate a member mission; returns id (new or existing) or null when already active
@@ -276,74 +218,45 @@ export const startMemberMission = async (
         "member_id" | "mission_id" | "address" | "is_completed"
     >,
 ): Promise<number | null> => {
-    const conn = await pool.getConnection();
     try {
-        const [confirm] = await pool.query<RowDataPacket[]>(
-            `SELECT EXISTS(SELECT * FROM member_mission 
-            WHERE mission_id = ? AND address = ? AND member_id = ?) as isExistMemberMission;`,
-            [data.mission_id, data.address, data.member_id],
-        );
-
-        if (!confirm[0]?.isExistMemberMission) {
-            const [maxIdRows] = await pool.query<RowDataPacket[]>(
-                `SELECT MAX(id) as maxId FROM member_mission`,
-            );
-            const nextId = (maxIdRows[0]?.maxId || 0) + 1;
-
-            const now = new Date();
-            const oneWeekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-            await pool.query<ResultSetHeader>(
-                `INSERT INTO member_mission (id, member_id, mission_id, created_at, updated_at, address, is_completed, deadline, activated)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-                [
-                    nextId,
-                    data.member_id,
-                    data.mission_id,
-                    new Date(),
-                    new Date(),
-                    data.address,
-                    data.is_completed,
-                    oneWeekLater,
-                    1,
-                ],
-            );
-            return nextId;
-        } else {
-            const [rows] = await pool.query<RowDataPacket[]>(
-                `SELECT * FROM member_mission 
-                WHERE mission_id = ? AND address = ? AND member_id = ?;`,
-                [data.mission_id, data.address, data.member_id],
-            );
-            const existing = rows[0] as RowDataPacket | undefined;
-            if (!existing) return null;
-
-            if (existing.activated === 1) {
-                // Already active → align with service expectation: treat as failure
-                return null;
-            } else {
-                const now = new Date();
-                const oneWeekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-                await pool.query<ResultSetHeader>(
-                    `UPDATE member_mission 
-                    SET activated = 1, updated_at = ? , deadline = ?
-                    WHERE mission_id = ? AND address = ? AND member_id = ?;`,
-                    [
-                        new Date(),
-                        oneWeekLater,
-                        data.mission_id,
-                        data.address,
-                        data.member_id,
-                    ],
-                );
-                return (existing as any).id as number;
+        const confirmMemberMission = await prisma.memberMission.findFirst({
+            where: {
+                memberId: data.member_id,
+                missionId: data.mission_id,
+                address: data.address
             }
+        });
+        if (confirmMemberMission && confirmMemberMission.activated === true) {
+            return null;
+        } else if (confirmMemberMission && confirmMemberMission.activated === false) {
+            const existing = await prisma.memberMission.update({
+                where: {
+                    id_memberId_missionId: {
+                        id: Number(confirmMemberMission.id),
+                        memberId: Number(confirmMemberMission.memberId),
+                        missionId: Number(confirmMemberMission.missionId),
+                    }
+                },
+                data: {activated: true}
+            });
+            return Number(existing.id);
+        } else {
+            const newMemberMission = await prisma.memberMission.create({
+                data:
+                    {
+                        memberId: data.member_id,
+                        missionId: data.mission_id,
+                        address: data.address,
+                        isCompleted: data.is_completed,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        deadline: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
+                        activated: true
+                    }
+            });
+            return Number(newMemberMission.id);
         }
     } catch (err) {
-        throw new Error(
-            `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`,
-        );
-    } finally {
-        conn.release();
+        throw new Error("Error setting preference. {" + err + "}");
     }
 };

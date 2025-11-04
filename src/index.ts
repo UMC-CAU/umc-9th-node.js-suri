@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import express, { Request, Response } from "express";
+import express, {Request, Response} from "express";
 import cors from "cors";
 
 import {
@@ -14,12 +14,15 @@ dotenv.config();
 
 const app = express();
 const port: number = Number(process.env.PORT ?? 3000);
+app.set('json replacer', (key: string, value: any) =>
+    typeof value === 'bigint' ? value.toString() : value
+);
 
 // Middlewares
 app.use(cors()); // allow CORS
 app.use(express.static("public")); // serve static files
 app.use(express.json()); // parse JSON request bodies
-app.use(express.urlencoded({ extended: false })); // parse urlencoded bodies
+app.use(express.urlencoded({extended: false})); // parse urlencoded bodies
 
 // Health/root endpoint
 app.get("/", (_req: Request, res: Response) => {

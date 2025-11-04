@@ -8,7 +8,7 @@ import type {
     StoreCreateDTO,
     UserResponseDTO,
 } from "../dtos/user.dtos";
-import { responseFromUser } from "../dtos/user.dtos";
+import {responseFromUser} from "../dtos/user.dtos";
 
 import {
     addMission,
@@ -41,7 +41,7 @@ export const userSignUp = async (
         phoneNumber: data.phoneNumber,
         password: hashedPassword,
         status: "ACTIVE",
-        point: "0",
+        point: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
         lastLogin: new Date(),
@@ -60,11 +60,14 @@ export const userSignUp = async (
         await setPreference(joinUserId, preference);
     }
 
-    const user: memberEntityDB = await getUser(joinUserId);
+    const user: memberEntityDB | null = await getUser(joinUserId);
+    if (user === null) {
+        throw new Error("가입한 유저를 찾을 수 없습니다.");
+    }
     const preferences: PreferenceRow[] =
         await getUserPreferencesByUserId(joinUserId);
 
-    return await responseFromUser({ user, preferences });
+    return await responseFromUser({user, preferences});
 };
 
 export const addInsertStore = async (
@@ -102,17 +105,18 @@ export const addMemReview = async (
     id: number;
     member_id: number;
     store_id: number;
-    grade: number;
+    grade: string;
     description: string;
     created_at: Date;
 }> => {
     const reviewData = {
         member_id: data.member_id,
         store_id: data.store_id,
-        grade: data.grade,
+        grade: String(data.grade),
         description: data.description,
         created_at: new Date(),
     };
+
 
     const reviewId: number | null = await addReview(reviewData);
     if (reviewId === null) {

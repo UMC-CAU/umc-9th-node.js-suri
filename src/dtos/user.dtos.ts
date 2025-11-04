@@ -3,6 +3,8 @@
 
 // DB User row shape (snake_case) used in responses
 
+import {PreferenceRow} from "../repository/user.repository";
+
 export interface memberEntityDB {
     id: number;
     email: string;
@@ -46,7 +48,7 @@ export interface UserResponseDTO {
     phoneNumber: string;
     point: number;
     status: boolean;
-    preferences: unknown;
+    preferences: Array<PreferenceRow> | null | undefined;
 }
 
 export const bodyToUser = (body: unknown): memberBodyToDTO => {
@@ -73,7 +75,7 @@ export const bodyToUser = (body: unknown): memberBodyToDTO => {
         password: String(b.password),
         preferences: b.preferences,
         status: Boolean(b.status),
-        point: 0,
+        point: Number(b.point),
         createdAt: new Date(),
         updatedAt: new Date(),
         lastLogin: new Date(),
@@ -84,11 +86,11 @@ export const responseFromUser = async ({
                                            user,
                                            preferences,
                                        }: {
-    user: memberEntityDB;
-    preferences: unknown;
+    user: memberEntityDB | null;
+    preferences: PreferenceRow[] | null;
 }): Promise<UserResponseDTO> => {
-    if (preferences === null || preferences === undefined) {
-        throw new Error("preferences is null or undefined");
+    if (preferences === null || user === null) {
+        throw new Error("preferences/user is null or undefined");
     }
     return {
         id: user.id,
@@ -100,7 +102,7 @@ export const responseFromUser = async ({
         phoneNumber: user.phone_number,
         point: user.point,
         status: user.status,
-        preferences,
+        preferences: preferences
     };
 };
 
@@ -140,7 +142,7 @@ export const bodyToStore = (body: unknown): StoreCreateDTO => {
 export interface ReviewCreateDTO {
     member_id: number;
     store_id: number;
-    grade: number;
+    grade: string;
     description: string;
 }
 
@@ -162,7 +164,7 @@ export const bodyToReview = (body: unknown): ReviewCreateDTO => {
     return {
         member_id: Number(b.member_id),
         store_id: Number(b.store_id),
-        grade: Number(b.grade),
+        grade: String(b.grade),
         description: String(b.description),
     };
 };
@@ -200,9 +202,9 @@ export interface MemberMissionCreateDTO {
     member_id: number;
     mission_id: number;
     address: string | null;
-    is_completed: number | boolean;
+    is_completed: boolean;
     deadline: string | Date;
-    activated: number | boolean;
+    activated: boolean;
     created_at: string | Date;
     updated_at: string | Date;
 }
