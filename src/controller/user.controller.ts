@@ -1,17 +1,12 @@
-import { StatusCodes } from "http-status-codes";
-import type { NextFunction, Request, Response } from "express";
+import {StatusCodes} from "http-status-codes";
+import type {NextFunction, Request, Response} from "express";
 
-import {
-    bodyToMemberMission,
-    bodyToMission,
-    bodyToReview,
-    bodyToStore,
-    bodyToUser,
-} from "../dtos/user.dtos";
+import {bodyToMemberMission, bodyToMission, bodyToReview, bodyToStore, bodyToUser,} from "../dtos/user.dtos";
 import {
     addInsertStore,
     addMemReview,
     insertMission,
+    listStoreReview,
     startMission,
     userSignUp,
 } from "../service/user.service";
@@ -25,7 +20,7 @@ export const handleUserSignUp = async (
     console.log("body:", req.body);
 
     const user = await userSignUp(bodyToUser(req.body));
-    res.status(StatusCodes.OK).json({ result: user });
+    res.status(StatusCodes.OK).json({result: user});
 };
 
 export const handleStoreInsert = async (
@@ -40,7 +35,7 @@ export const handleStoreInsert = async (
         return res.status(200).json(result);
     } catch (err: any) {
         console.error("에러:", err);
-        return res.status(400).json({ message: err?.message ?? "Bad Request" });
+        return res.status(400).json({message: err?.message ?? "Bad Request"});
     }
 };
 
@@ -56,7 +51,7 @@ export const handleInsertReview = async (
         return res.status(200).json(result);
     } catch (err: any) {
         console.error("에러:", err);
-        return res.status(400).json({ message: err?.message ?? "Bad Request" });
+        return res.status(400).json({message: err?.message ?? "Bad Request"});
     }
 };
 
@@ -72,7 +67,7 @@ export const handleInsertMission = async (
         return res.status(200).json(result);
     } catch (err: any) {
         console.error("에러:", err);
-        return res.status(400).json({ message: err?.message ?? "Bad Request" });
+        return res.status(400).json({message: err?.message ?? "Bad Request"});
     }
 };
 
@@ -88,6 +83,29 @@ export const handleMissionStart = async (
         return res.status(200).json(result);
     } catch (err: any) {
         console.error("에러:", err);
-        return res.status(400).json({ message: err?.message ?? "Bad Request" });
+        return res.status(400).json({message: err?.message ?? "Bad Request"});
     }
 };
+
+export const handleGetStoreReivew = async (
+    req: Request<{ storeId: string }, unknown, unknown>,
+    res: Response,
+    _next: NextFunction,
+): Promise<Response | void> => {
+    try {
+        const cursor = parseInt(req.query.cursor as string, 10);
+
+        const storeID = parseInt(req.params.storeId, 10);
+
+
+        const reviews = await listStoreReview(
+            storeID, cursor
+        );
+
+        res.status(200).json(reviews);
+
+    } catch (err: any) {
+        console.error("에러:", err);
+        return res.status(400).json({message: err?.message ?? "Bad Request"});
+    }
+}

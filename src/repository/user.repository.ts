@@ -260,3 +260,55 @@ export const startMemberMission = async (
         throw new Error("Error setting preference. {" + err + "}");
     }
 };
+
+export const getStoreReviews = async (storeId: number, cursor: number): Promise<{
+    nickname: string | null;
+    store_name: string;
+    grade: string;
+    description: string;
+    created_at: Date | null;
+}[]> => {
+    try {
+        console.log("--------------" + storeId, cursor);
+        const store = await prisma.store.findFirst({
+            where: {id: BigInt(storeId)}, select: {name: true}
+        });
+        if (!store) {
+            throw new Error("Store not found");
+        }
+        const reviews = await prisma.review.findMany(
+            {
+                where: {storeId: storeId, id: {gt: cursor}},
+                select: {
+                    grade: true,
+                    description: true,
+                    createdAt: true,
+                    memberId: true
+                },
+                orderBy: {id: "asc"},
+                take: 5
+            }
+        )
+        const nicknames = await prisma.member.findMany({
+            where: {id: {in: reviews.map(review => review.memberId)}},
+            select: {nickname: true, id: true}
+        })
+
+        const result = reviews.map(review => {
+            const nicknameObj = nicknames.find(nick => nick.id === review.memberId);
+            return {
+                nickname: nicknameObj ? String(nicknameObj.nickname) : null,
+                store_name: String(store.name),
+                grade: String(review.grade),
+                description: String(review.description),
+                created_at: review.createdAt
+            }
+        })
+
+        return result;
+
+    } catch (err) {
+        throw new Error("Error getting reviews. {" + err + "}");
+    }
+
+}

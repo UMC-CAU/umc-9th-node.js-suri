@@ -15,6 +15,7 @@ import {
     addReview,
     addStore,
     addUser,
+    getStoreReviews,
     getUser,
     getUserPreferencesByUserId,
     PreferenceRow,
@@ -186,3 +187,26 @@ export const startMission = async (
         ...memmissionData,
     };
 };
+
+
+export const listStoreReview = async (
+    storeId: number,
+    cursor: number,
+): Promise<{
+    nickname: string | null;
+    store_name: string;
+    grade: string;
+    description: string;
+    created_at: Date | null;
+}[]> => {
+    try {
+        const reviews = await getStoreReviews(storeId, cursor);
+        if (!reviews) {
+            throw new Error(" The Store is not found.")
+        }
+        return reviews;
+    } catch (err) {
+        throw new Error("Error getting reviews. {" + err + "}");
+    }
+
+}
