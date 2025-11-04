@@ -16,6 +16,7 @@ import {
     addStore,
     addUser,
     getMemberReviews,
+    getMissionFromStore,
     getStoreReviews,
     getUser,
     getUserPreferencesByUserId,
@@ -228,6 +229,25 @@ export const listMemberReviews = async (
             throw new Error(" The Member is not found.")
         }
         return reviews;
+
+    } catch (err) {
+        throw new Error("Error getting reviews. {" + err + "}");
+    }
+}
+
+export const getStoreMission = async (storeId: number, cursor: number): Promise<{
+    id: number;
+    title: string;
+    description: string;
+    point_reward: number;
+    store_name: string;
+}[]> => {
+    try {
+        const missions = await getMissionFromStore(storeId, cursor);
+        if (!missions) {
+            throw new Error(" The Store is not found.")
+        }
+        return missions;
 
     } catch (err) {
         throw new Error("Error getting reviews. {" + err + "}");

@@ -364,3 +364,43 @@ export const getMemberReviews = async (
         throw new Error("Error getting reviews. {" + err + "}");
     }
 }
+
+export const getMissionFromStore = async (
+    storeId: number,
+    cursor: number,
+): Promise<{
+    id: number;
+    title: string;
+    description: string;
+    point_reward: number;
+    store_name: string;
+}[]> => {
+    try {
+        const store = await prisma.store.findFirst({where: {id: BigInt(storeId)}, select: {name: true}});
+        if (!store) {
+            throw new Error("Store not found");
+        }
+        const missions = await prisma.mission.findMany({
+            where: {storeId: storeId, id: {gt: cursor}},
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                pointReward: true
+            },
+            orderBy: {id: "asc"},
+            take: 5
+        })
+        const result = missions.map(mission => ({
+            id: Number(mission.id),
+            title: String(mission.title),
+            description: String(mission.description),
+            point_reward: Number(mission.pointReward),
+            store_name: String(store.name)
+        }))
+        return result;
+
+    } catch (err) {
+        throw new Error("Error getting missions. {" + err + "}");
+    }
+}

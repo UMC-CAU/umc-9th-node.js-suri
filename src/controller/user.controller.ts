@@ -5,6 +5,7 @@ import {bodyToMemberMission, bodyToMission, bodyToReview, bodyToStore, bodyToUse
 import {
     addInsertStore,
     addMemReview,
+    getStoreMission,
     insertMission,
     listMemberReviews,
     listStoreReview,
@@ -128,6 +129,24 @@ export const handleGetMemberReview = async (
 
     } catch (err: any) {
         console.error("Error:", err);
+        return res.status(400).json({message: err?.message ?? "Bad Request"});
+    }
+}
+
+export const handleGetStoreMission = async (
+    req: Request<{ storeId: string }, unknown, unknown>,
+    res: Response,
+    _next: NextFunction,
+): Promise<Response | void> => {
+    try {
+        const cursor = parseInt(req.query.cursor as string || "0", 10);
+        const storeId = parseInt(req.params.storeId, 10);
+
+        const missions = await getStoreMission(storeId, cursor);
+        res.status(200).json(missions);
+
+    } catch (err: any) {
+        console.error("에러:", err);
         return res.status(400).json({message: err?.message ?? "Bad Request"});
     }
 }
