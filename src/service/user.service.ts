@@ -15,6 +15,7 @@ import {
     addReview,
     addStore,
     addUser,
+    getMemberReviews,
     getStoreReviews,
     getUser,
     getUserPreferencesByUserId,
@@ -209,4 +210,26 @@ export const listStoreReview = async (
         throw new Error("Error getting reviews. {" + err + "}");
     }
 
+}
+
+export const listMemberReviews = async (
+    memberId: number,
+    cursor: number,
+): Promise<{
+    nickname: string | null;
+    store_name: string;
+    grade: string;
+    description: string;
+    created_at: Date | null;
+}[]> => {
+    try {
+        const reviews = await getMemberReviews(memberId, cursor);
+        if (!reviews) {
+            throw new Error(" The Member is not found.")
+        }
+        return reviews;
+
+    } catch (err) {
+        throw new Error("Error getting reviews. {" + err + "}");
+    }
 }

@@ -6,6 +6,7 @@ import {
     addInsertStore,
     addMemReview,
     insertMission,
+    listMemberReviews,
     listStoreReview,
     startMission,
     userSignUp,
@@ -106,6 +107,27 @@ export const handleGetStoreReivew = async (
 
     } catch (err: any) {
         console.error("에러:", err);
+        return res.status(400).json({message: err?.message ?? "Bad Request"});
+    }
+}
+
+export const handleGetMemberReview = async (
+    req: Request<{ memberId: string }, unknown, unknown>,
+    res: Response,
+    _next: NextFunction,
+): Promise<Response | void> => {
+    try {
+        const cursor = parseInt(req.query.cursor as string || "0", 10);
+        const memberId = parseInt(req.params.memberId, 10);
+
+        const reviews = await listMemberReviews(
+            memberId, cursor
+        );
+
+        res.status(200).json(reviews);
+
+    } catch (err: any) {
+        console.error("Error:", err);
         return res.status(400).json({message: err?.message ?? "Bad Request"});
     }
 }

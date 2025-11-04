@@ -3,6 +3,7 @@ import express, {Request, Response} from "express";
 import cors from "cors";
 
 import {
+    handleGetMemberReview,
     handleGetStoreReivew,
     handleInsertMission,
     handleInsertReview,
@@ -37,6 +38,7 @@ app.post("/api/v1/users/reveiws", handleInsertReview);
 app.post("/api/v1/missions/insert", handleInsertMission);
 app.post("/api/v1/member_mission/start", handleMissionStart);
 app.get("/api/v1/store/:storeId/review/", handleGetStoreReivew);
+app.get("/api/v1/member/:memberId/review/", handleGetMemberReview);
 
 // Start server
 app.listen(port, () => {
