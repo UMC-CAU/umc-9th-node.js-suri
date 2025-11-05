@@ -10,6 +10,7 @@ import {
     insertMission,
     listMemberReviews,
     listStoreReview,
+    setOnMissionCompelete,
     startMission,
     userSignUp,
 } from "../service/user.service";
@@ -167,5 +168,24 @@ export const handleGetOnMission = async (
         console.error("Error:", err);
         return res.status(400).json({message: err?.message ?? "Bad Request"});
     }
+}
 
+export const handleSetMissionCompelete = async (
+    req: Request<{ memberId: string, missionId: string }, unknown, unknown>,
+    res: Response,
+    _next: NextFunction,
+): Promise<Response | void> => {
+    try {
+        const memberId = parseInt(req.params.memberId, 10);
+        const missionId = parseInt(req.params.missionId, 10);
+        const cursor = parseInt(req.query.cursor as string || "0", 10);
+        const cursorBigInt = BigInt(cursor);
+
+        const completeMission = await setOnMissionCompelete(memberId, missionId, cursorBigInt);
+        res.status(200).json(completeMission);
+
+    } catch (err: any) {
+        console.error("Error:", err);
+        return res.status(400).json({message: err?.message ?? "Bad Request"});
+    }
 }

@@ -22,6 +22,7 @@ import {
     getUser,
     getUserPreferencesByUserId,
     PreferenceRow,
+    setOnMissionCompeleteRepos,
     setPreference,
     startMemberMission,
 } from "../repository/user.repository";
@@ -276,4 +277,28 @@ export const getOnMemMission = async (memberId: number, cursor: number): Promise
     } catch (err) {
         throw new Error("Error getting reviews. {" + err + "}");
     }
+}
+
+export const setOnMissionCompelete = async (memberId: number, missionId: number, cursor: bigint): Promise<{
+    id: number;
+    memberId: number;
+    missionId: number;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+    address: string;
+    isCompleted: boolean;
+    deadline: Date | null
+    activated: boolean;
+}> => {
+    try {
+        const completeMission = await setOnMissionCompeleteRepos(memberId, missionId, cursor);
+        if (!completeMission) {
+            throw new Error("The MemberMission is not found.")
+        }
+        return completeMission;
+
+    } catch (err) {
+        throw new Error("Error getting reviews. {" + err + "}");
+    }
+
 }

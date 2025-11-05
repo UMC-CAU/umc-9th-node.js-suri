@@ -10,6 +10,7 @@ import {
     handleInsertMission,
     handleInsertReview,
     handleMissionStart,
+    handleSetMissionCompelete,
     handleStoreInsert,
     handleUserSignUp,
 } from "./controller/user.controller";
@@ -43,6 +44,7 @@ app.get("/api/v1/store/:storeId/review/", handleGetStoreReivew);
 app.get("/api/v1/member/:memberId/review/", handleGetMemberReview);
 app.get("/api/v1/store/:storeId/mission/", handleGetStoreMission);
 app.get("/api/v1/member/:memberId/member_mission/", handleGetOnMission);
+app.patch("/api/v1/member/:memberId/mission/:missionId/setcompelete", handleSetMissionCompelete);
 
 
 // Start server

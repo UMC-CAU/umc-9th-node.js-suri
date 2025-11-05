@@ -473,3 +473,67 @@ export const getOnMissionRepos = async (
     }
 
 }
+
+export const setOnMissionCompeleteRepos = async (
+    memberId: number,
+    missionId: number,
+    cursor: bigint,
+): Promise<{
+    id: number;
+    memberId: number;
+    missionId: number;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+    address: string;
+    isCompleted: boolean;
+    deadline: Date | null
+    activated: boolean;
+
+}> => {
+    try {
+        const cursorFinal = await prisma.memberMission.findFirst({
+            where: {id: {gt: cursor}, memberId: BigInt(memberId), missionId: BigInt(missionId)},
+            select: {id: true, activated: true, isCompleted: true, updatedAt: true, deadline: true}
+        })
+        if (!cursorFinal) {
+            throw new Error("Cursor not found");
+        }
+        if (cursorFinal.activated === false) {
+            throw new Error("The mission is not active.");
+        }
+        if (cursorFinal.isCompleted === true) {
+            throw new Error("The mission is already completed.");
+        }
+        if (cursorFinal.deadline && new Date(cursorFinal.deadline) < new Date()) {
+            throw new Error("The mission is already expired.");
+        }
+        const result = await prisma.memberMission.update({
+            where: {
+                id_memberId_missionId: {
+                    id: BigInt(cursorFinal.id),
+                    memberId: BigInt(memberId),
+                    missionId: BigInt(missionId),
+                }
+            },
+            data: {
+                isCompleted: true,
+                updatedAt: new Date()
+            },
+
+        })
+        return {
+            id: Number(result.id),
+            memberId: Number(result.memberId),
+            missionId: Number(result.missionId),
+            createdAt: result.createdAt,
+            updatedAt: result.updatedAt,
+            address: String(result.address),
+            isCompleted: Boolean(result.isCompleted),
+            deadline: result.deadline,
+            activated: Boolean(result.activated)
+        }
+
+    } catch (err) {
+        throw new Error("Error setting preference. {" + err + "}");
+    }
+}
