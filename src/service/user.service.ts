@@ -17,6 +17,7 @@ import {
     addUser,
     getMemberReviews,
     getMissionFromStore,
+    getOnMissionRepos,
     getStoreReviews,
     getUser,
     getUserPreferencesByUserId,
@@ -249,6 +250,29 @@ export const getStoreMission = async (storeId: number, cursor: number): Promise<
         }
         return missions;
 
+    } catch (err) {
+        throw new Error("Error getting reviews. {" + err + "}");
+    }
+}
+
+export const getOnMemMission = async (memberId: number, cursor: number): Promise<{
+    id: number;
+    member_id: number;
+    store_name: string;
+    mission_title: string;
+    mission_description: string;
+    mission_point_reward: number;
+    activated: boolean;
+    is_completed: boolean;
+    created_at: Date | null;
+    deadline: Date | null;
+}[]> => {
+    try {
+        const onMissions = await getOnMissionRepos(memberId, cursor);
+        if (!onMissions) {
+            throw new Error("The Member is not found.")
+        }
+        return onMissions;
     } catch (err) {
         throw new Error("Error getting reviews. {" + err + "}");
     }

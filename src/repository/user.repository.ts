@@ -404,3 +404,72 @@ export const getMissionFromStore = async (
         throw new Error("Error getting missions. {" + err + "}");
     }
 }
+
+export const getOnMissionRepos = async (
+    memberId: number,
+    cursor: number,
+): Promise<{
+    id: number;
+    member_id: number;
+    store_name: string;
+    mission_title: string;
+    mission_description: string;
+    mission_point_reward: number;
+    activated: boolean;
+    is_completed: boolean;
+    created_at: Date | null;
+    deadline: Date | null;
+}[]> => {
+    try {
+        const onMissions = await prisma.memberMission.findMany({
+            where: {
+                memberId: memberId,
+                id: {gt: cursor},
+                activated: true
+            },
+            orderBy: {id: "asc"},
+            take: 5
+        })
+        const missions = await prisma.mission.findMany({
+            where: {
+                id: {in: onMissions.map(mission => mission.missionId)}
+            }
+        })
+        if (!missions) {
+            throw new Error("Missions not found");
+        }
+        const stores = await prisma.store.findMany({
+            where: {
+                id: {
+                    in: missions
+                        .map(missions => missions.storeId)
+                        .filter((storeId): storeId is bigint => storeId !== null)
+                }
+            }
+        })
+        if (!stores) {
+            throw new Error("Stores not found");
+        }
+        const result = onMissions.map(onmission => {
+            const mission = missions.find(mission => mission.id === onmission.missionId);
+            const store = stores.find(store => store.id === mission?.storeId);
+            return {
+                id: Number(onmission.id),
+                member_id: Number(onmission.memberId),
+                store_name: store ? String(store.name) : "",
+                mission_title: mission ? String(mission.title) : "",
+                mission_description: mission ? String(mission.description) : "",
+                mission_point_reward: mission ? Number(mission.pointReward) : 0,
+                activated: Boolean(onmission.activated),
+                is_completed: Boolean(onmission.isCompleted),
+                created_at: onmission.createdAt,
+                deadline: onmission.deadline
+            }
+
+        })
+        return result;
+    } catch (err) {
+        throw new Error("Error getting missions. {" + err + "}");
+    }
+
+}

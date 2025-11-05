@@ -4,6 +4,7 @@ import cors from "cors";
 
 import {
     handleGetMemberReview,
+    handleGetOnMission,
     handleGetStoreMission,
     handleGetStoreReivew,
     handleInsertMission,
@@ -41,6 +42,7 @@ app.post("/api/v1/member_mission/start", handleMissionStart);
 app.get("/api/v1/store/:storeId/review/", handleGetStoreReivew);
 app.get("/api/v1/member/:memberId/review/", handleGetMemberReview);
 app.get("/api/v1/store/:storeId/mission/", handleGetStoreMission);
+app.get("/api/v1/member/:memberId/member_mission/", handleGetOnMission);
 
 
 // Start server
