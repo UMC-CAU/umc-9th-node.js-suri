@@ -1,0 +1,27 @@
+{
+  "name": "umc-9th-node.js-suri",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon -e js,json,prisma --exec \"prisma generate && node src/index.js\"",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/UMC-CAU/umc-9th-node.js-suri"
+  },
+  "private": true,
+  "dependencies": {
+    "@prisma/client": "^6.18.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "http-status-codes": "^2.3.0",
+    "mysql2": "^3.15.3",
+    "prisma": "^6.18.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19"
+  }
+}

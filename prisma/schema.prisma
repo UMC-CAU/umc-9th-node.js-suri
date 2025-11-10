@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Member {
+  id          BigInt    @id @default(autoincrement()) @db.BigInt
+  name        String    @db.VarChar(20)
+  nickname    String?   @db.VarChar(30)
+  gender      String?   @db.VarChar(20)
+  birthdate   DateTime? @db.DateTime
+  createdAt   DateTime? @map("created_at") @db.DateTime(6)
+  updatedAt   DateTime? @map("updated_at") @db.DateTime(6)
+  status      String?   @db.VarChar(20)
+  lastLogin   DateTime? @map("last_login") @db.DateTime
+  email       String?   @db.VarChar(20)
+  phoneNumber String    @map("phone_number") @db.VarChar(20)
+  password    String    @db.VarChar(64)
+  point       BigInt?   @db.BigInt
+
+  foodCategories FoodCategory[]
+  memberMissions MemberMission[]
+  reviews        Review[]
+
+  @@map("member")
+}
+
+model FoodCategory {
+  id         BigInt  @default(autoincrement()) @db.BigInt
+  memberId   BigInt  @map("member_id") @db.BigInt
+  preferFood String? @map("prefer_food") @db.VarChar(20)
+
+  member Member @relation(fields: [memberId], references: [id])
+
+  @@id([id, memberId])
+  @@map("foodcategory")
+}
+
+model MemberMission {
+  id          BigInt    @default(autoincrement()) @db.BigInt
+  memberId    BigInt    @map("member_id") @db.BigInt
+  missionId   BigInt    @map("mission_id") @db.BigInt
+  createdAt   DateTime? @map("created_at") @db.DateTime(6)
+  updatedAt   DateTime? @map("updated_at") @db.DateTime(6)
+  address     String?   @db.VarChar(20)
+  isCompleted Boolean?  @map("is_completed") @db.TinyInt
+  deadline    DateTime? @db.DateTime(6)
+  activated   Boolean?  @db.TinyInt
+
+  member  Member  @relation(fields: [memberId], references: [id])
+  mission Mission @relation(fields: [missionId], references: [id])
+
+  @@id([id, memberId, missionId])
+  @@map("member_mission")
+}
+
+model Mission {
+  id          BigInt  @id @default(autoincrement()) @db.BigInt
+  description String? @db.VarChar(20)
+  title       String? @db.VarChar(20)
+  pointReward BigInt? @map("point_reward") @db.BigInt
+  storeId     BigInt? @map("store_id") @db.BigInt
+
+  store          Store?          @relation(fields: [storeId], references: [id])
+  memberMissions MemberMission[]
+
+  @@map("mission")
+}
+
+model Store {
+  id             BigInt  @id @default(autoincrement()) @db.BigInt
+  name           String  @db.VarChar(50)
+  foodCategoryId BigInt  @map("food_category_id") @db.BigInt
+  subscription   String? @db.VarChar(20)
+  address        String? @db.VarChar(20)
+  detailAddress  String? @map("detail_address") @db.VarChar(255)
+
+  missions Mission[]
+  reviews  Review[]
+
+  @@map("store")
+}
+
+model Review {
+  id          BigInt    @id @default(autoincrement()) @db.BigInt
+  memberId    BigInt    @map("member_id") @db.BigInt
+  storeId     BigInt    @map("store_id") @db.BigInt
+  grade       String?   @db.VarChar(20)
+  description String?   @db.VarChar(30)
+  createdAt   DateTime? @map("created_at") @db.DateTime(6)
+
+  member Member        @relation(fields: [memberId], references: [id])
+  store  Store         @relation(fields: [storeId], references: [id])
+  photos ReviewPhoto[] // 추가된 반대 방향 관계 필드
+
+  @@map("review")
+}
+
+model ReviewPhoto {
+  id       BigInt  @default(autoincrement()) @db.BigInt
+  reviewId BigInt  @map("reveiw_id") @db.BigInt
+  link     String? @db.VarChar(60)
+
+  review Review @relation(fields: [reviewId], references: [id])
+
+  @@id([id, reviewId])
+  @@map("review_photo")
+}
