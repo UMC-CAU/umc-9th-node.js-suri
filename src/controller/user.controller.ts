@@ -1,4 +1,3 @@
-import {StatusCodes} from "http-status-codes";
 import type {NextFunction, Request, Response} from "express";
 
 import {bodyToMemberMission, bodyToMission, bodyToReview, bodyToStore, bodyToUser,} from "../dtos/user.dtos";
@@ -24,7 +23,7 @@ export const handleUserSignUp = async (
     console.log("body:", req.body);
 
     const user = await userSignUp(bodyToUser(req.body));
-    res.status(StatusCodes.OK).json({result: user});
+    res.success(user);
 };
 
 export const handleStoreInsert = async (
@@ -36,7 +35,7 @@ export const handleStoreInsert = async (
 
         const storeData = bodyToStore(req.body);
         const result = await addInsertStore(storeData);
-        return res.status(200).json(result);
+        res.success(result);
     } catch (err: any) {
         console.error("에러:", err);
         return res.status(400).json({message: err?.message ?? "Bad Request"});
@@ -52,7 +51,7 @@ export const handleInsertReview = async (
 
         const reviewData = bodyToReview(req.body);
         const result = await addMemReview(reviewData);
-        return res.status(200).json(result);
+        res.success(result);
     } catch (err: any) {
         console.error("에러:", err);
         return res.status(400).json({message: err?.message ?? "Bad Request"});
@@ -68,7 +67,7 @@ export const handleInsertMission = async (
 
         const missionData = bodyToMission(req.body);
         const result = await insertMission(missionData);
-        return res.status(200).json(result);
+        res.success(result);
     } catch (err: any) {
         console.error("에러:", err);
         return res.status(400).json({message: err?.message ?? "Bad Request"});
@@ -84,7 +83,7 @@ export const handleMissionStart = async (
 
         const missionData = bodyToMemberMission(req.body);
         const result = await startMission(missionData);
-        return res.status(200).json(result);
+        res.success(result);
     } catch (err: any) {
         console.error("에러:", err);
         return res.status(400).json({message: err?.message ?? "Bad Request"});
@@ -105,9 +104,7 @@ export const handleGetStoreReivew = async (
         const reviews = await listStoreReview(
             storeID, cursor
         );
-
-        res.status(200).json(reviews);
-
+        res.success(reviews);
     } catch (err: any) {
         console.error("에러:", err);
         return res.status(400).json({message: err?.message ?? "Bad Request"});
@@ -126,8 +123,8 @@ export const handleGetMemberReview = async (
         const reviews = await listMemberReviews(
             memberId, cursor
         );
+        res.success(reviews);
 
-        res.status(200).json(reviews);
 
     } catch (err: any) {
         console.error("Error:", err);
@@ -145,7 +142,7 @@ export const handleGetStoreMission = async (
         const storeId = parseInt(req.params.storeId, 10);
 
         const missions = await getStoreMission(storeId, cursor);
-        res.status(200).json(missions);
+        res.success(missions);
 
     } catch (err: any) {
         console.error("에러:", err);
@@ -162,7 +159,7 @@ export const handleGetOnMission = async (
         const memberId = parseInt(req.params.memberId, 10);
 
         const onMissions = await getOnMemMission(memberId, cursor);
-        res.status(200).json(onMissions);
+        res.success(onMissions);
 
     } catch (err: any) {
         console.error("Error:", err);
@@ -182,7 +179,7 @@ export const handleSetMissionCompelete = async (
         const cursorBigInt = BigInt(cursor);
 
         const completeMission = await setOnMissionCompelete(memberId, missionId, cursorBigInt);
-        res.status(200).json(completeMission);
+        res.success(completeMission);
 
     } catch (err: any) {
         console.error("Error:", err);

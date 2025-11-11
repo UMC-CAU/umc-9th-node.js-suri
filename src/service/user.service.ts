@@ -26,6 +26,17 @@ import {
     setPreference,
     startMemberMission,
 } from "../repository/user.repository";
+import {
+    DuplicateEmailError,
+    NoListStoreReviewError,
+    NoMissionFromStoreError,
+    NoMissionInsertionError,
+    NoMissionStartError,
+    NoPreferenceError,
+    NoReviewInsertionError,
+    NoStoreInfromationError,
+    NoStoreInsertionError
+} from "../error";
 
 // Simple password hashing (demo only). Consider bcrypt/argon2 for production.
 const hashPassword = (password: string): string => {
@@ -53,7 +64,7 @@ export const userSignUp = async (
     });
 
     if (joinUserId === null) {
-        throw new Error("이미 존재하는 이메일입니다.");
+        throw new DuplicateEmailError("이미 존재하는 이메일.", data);
     }
 
     // preferences가 배열이라고 가정하고 순회
@@ -61,6 +72,10 @@ export const userSignUp = async (
     const prefs = Array.isArray((data as any).preferences)
         ? ((data as any).preferences as string[])
         : [];
+    if (prefs.length === 0) {
+        throw new NoPreferenceError("선호도를 선택해야합니다!", data);
+    }
+
     for (const preference of prefs) {
         await setPreference(joinUserId, preference);
     }
@@ -92,10 +107,13 @@ export const addInsertStore = async (
         address: data.address,
         detail_address: data.detail_address,
     };
+    if (storeData.name === null || storeData.food_category_id === null || storeData.subscription === null || storeData.address === null || storeData.detail_address === null) {
+        throw new NoStoreInfromationError("가게의 정보를 정확히 입력하십시오", data);
+    }
 
     const storeId: number | null = await addStore(storeData);
     if (storeId === null) {
-        throw new Error("가게 등록에 실패했습니다.");
+        throw new NoStoreInsertionError("가게 등록에 실패.", data);
     }
 
     return {
@@ -121,11 +139,14 @@ export const addMemReview = async (
         description: data.description,
         created_at: new Date(),
     };
+    if (reviewData.member_id === null || reviewData.store_id === null || reviewData.grade === null || reviewData.description === null || reviewData.created_at === null) {
+        throw new NoReviewInsertionError("리뷰의 정보를 정확히 입력해주세요", data);
+    }
 
 
     const reviewId: number | null = await addReview(reviewData);
     if (reviewId === null) {
-        throw new Error("리뷰 등록에 실패했습니다.");
+        throw new NoReviewInsertionError("리뷰 등록에 실패", data);
     }
 
     return {
@@ -149,10 +170,13 @@ export const insertMission = async (
         point_reward: data.point_reward,
         store_id: data.store_id,
     };
+    if (missionData.title === null || missionData.point_reward === null || missionData.store_id === null) {
+        throw new NoMissionInsertionError("미션의 정보를 정확히 입력해주세요", data);
+    }
 
     const missionId: number | null = await addMission(missionData);
     if (missionId === null) {
-        throw new Error("리뷰 등록에 실패했습니다.");
+        throw new NoMissionInsertionError("미션 등록 실패", data);
     }
 
     return {
@@ -180,10 +204,13 @@ export const startMission = async (
         deadline: data.deadline,
         activated: data.activated,
     };
+    if (memmissionData.member_id === null || memmissionData.mission_id === null || memmissionData.address === null || memmissionData.is_completed === null || memmissionData.deadline === null || memmissionData.activated === null) {
+        throw new NoMissionStartError("미션 시작 정보를 정확히 입력해주세요", data);
+    }
 
     const memmissionId: number | null = await startMemberMission(memmissionData);
     if (memmissionId === null) {
-        throw new Error("이미 도전중인 미션입니다!");
+        throw new NoMissionStartError("이미 시작된 미션입니다.", data);
     }
 
     return {
@@ -206,7 +233,10 @@ export const listStoreReview = async (
     try {
         const reviews = await getStoreReviews(storeId, cursor);
         if (!reviews) {
-            throw new Error(" The Store is not found.")
+            throw new NoListStoreReviewError("No stores found", storeId)
+        }
+        if (reviews.length === 0) {
+            throw new NoListStoreReviewError("No reviews found", storeId)
         }
         return reviews;
     } catch (err) {
@@ -228,7 +258,9 @@ export const listMemberReviews = async (
     try {
         const reviews = await getMemberReviews(memberId, cursor);
         if (!reviews) {
-            throw new Error(" The Member is not found.")
+            throw new NoListStoreReviewError("No members found", memberId)
+        } else if (reviews.length === 0) {
+            throw new NoListStoreReviewError("No reviews found", memberId)
         }
         return reviews;
 
@@ -247,9 +279,12 @@ export const getStoreMission = async (storeId: number, cursor: number): Promise<
     try {
         const missions = await getMissionFromStore(storeId, cursor);
         if (!missions) {
-            throw new Error(" The Store is not found.")
+            throw new NoMissionFromStoreError("No stores found", storeId);
+        } else if (missions.length === 0) {
+            throw new NoMissionFromStoreError("No missions found", storeId);
+        } else {
+            return missions;
         }
-        return missions;
 
     } catch (err) {
         throw new Error("Error getting reviews. {" + err + "}");
@@ -267,11 +302,17 @@ export const getOnMemMission = async (memberId: number, cursor: number): Promise
     is_completed: boolean;
     created_at: Date | null;
     deadline: Date | null;
-}[]> => {
+}[] | number> => {
     try {
         const onMissions = await getOnMissionRepos(memberId, cursor);
-        if (!onMissions) {
-            throw new Error("The Member is not found.")
+        if (onMissions === 0) {
+            throw new NoMissionFromStoreError("No On Mission found", memberId);
+        } else if (onMissions === 1) {
+            throw new NoMissionFromStoreError("No Mission found", memberId);
+        } else if (onMissions === 2) {
+            throw new NoMissionFromStoreError("No Stores found", memberId);
+        } else if (onMissions === null) {
+            throw new NoMissionFromStoreError("No Final On Mission found", memberId);
         }
         return onMissions;
     } catch (err) {

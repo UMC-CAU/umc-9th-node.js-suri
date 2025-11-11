@@ -7,6 +7,7 @@ import type {
     StoreCreateDTO,
 } from "../dtos/user.dtos";
 import {createHash} from "crypto"
+import {NoSetOnMissionCompeleteError} from "../error";
 
 // Payload used to insert a user into DB (subset of memberBodyToDTO)
 export interface UserInsertPayload {
@@ -30,7 +31,11 @@ export const addUser = async (
 ): Promise<number | null> => {
 
     try {
-        const user = await prisma.member.findFirst({where: {email: data.email}})
+        const user = await prisma.member.findFirst({
+            where: {
+                email: data.email
+            }
+        })
         if (user) {
             return null
         } else {
@@ -257,7 +262,7 @@ export const startMemberMission = async (
             return Number(newMemberMission.id);
         }
     } catch (err) {
-        throw new Error("Error setting preference. {" + err + "}");
+        throw new Error("Error starting member mission. {" + err + "}");
     }
 };
 
@@ -267,14 +272,14 @@ export const getStoreReviews = async (storeId: number, cursor: number): Promise<
     grade: string;
     description: string;
     created_at: Date | null;
-}[]> => {
+}[] | null> => {
     try {
         console.log("--------------" + storeId, cursor);
         const store = await prisma.store.findFirst({
             where: {id: BigInt(storeId)}, select: {name: true}
         });
         if (!store) {
-            throw new Error("Store not found");
+            return null;
         }
         const reviews = await prisma.review.findMany(
             {
@@ -304,8 +309,12 @@ export const getStoreReviews = async (storeId: number, cursor: number): Promise<
                 created_at: review.createdAt
             }
         })
+        if (result.length === 0) {
+            return [];
+        } else {
+            return result;
+        }
 
-        return result;
 
     } catch (err) {
         throw new Error("Error getting reviews. {" + err + "}");
@@ -321,13 +330,13 @@ export const getMemberReviews = async (
     grade: string;
     description: string;
     created_at: Date | null;
-}[]> => {
+}[] | null> => {
     try {
         const member = await prisma.member.findFirst({
             where: {id: BigInt(memberId)}, select: {nickname: true}
         });
         if (!member) {
-            throw new Error("Member not found");
+            return null;
         }
         const reviews = await prisma.review.findMany(
             {
@@ -357,8 +366,11 @@ export const getMemberReviews = async (
                 created_at: review.createdAt
             }
         })
-
-        return result;
+        if (result.length === 0) {
+            return [];
+        } else {
+            return result;
+        }
 
     } catch (err) {
         throw new Error("Error getting reviews. {" + err + "}");
@@ -374,11 +386,11 @@ export const getMissionFromStore = async (
     description: string;
     point_reward: number;
     store_name: string;
-}[]> => {
+}[] | null> => {
     try {
         const store = await prisma.store.findFirst({where: {id: BigInt(storeId)}, select: {name: true}});
         if (!store) {
-            throw new Error("Store not found");
+            return null;
         }
         const missions = await prisma.mission.findMany({
             where: {storeId: storeId, id: {gt: cursor}},
@@ -398,6 +410,9 @@ export const getMissionFromStore = async (
             point_reward: Number(mission.pointReward),
             store_name: String(store.name)
         }))
+        if (result.length === 0) {
+            return [];
+        }
         return result;
 
     } catch (err) {
@@ -419,24 +434,28 @@ export const getOnMissionRepos = async (
     is_completed: boolean;
     created_at: Date | null;
     deadline: Date | null;
-}[]> => {
+}[] | number> => {
     try {
         const onMissions = await prisma.memberMission.findMany({
             where: {
                 memberId: memberId,
                 id: {gt: cursor},
-                activated: true
+                activated: true,
+                isCompleted: false
             },
             orderBy: {id: "asc"},
             take: 5
         })
+        if (!onMissions) {
+            return 0;
+        }
         const missions = await prisma.mission.findMany({
             where: {
                 id: {in: onMissions.map(mission => mission.missionId)}
             }
         })
         if (!missions) {
-            throw new Error("Missions not found");
+            return 1;
         }
         const stores = await prisma.store.findMany({
             where: {
@@ -448,7 +467,7 @@ export const getOnMissionRepos = async (
             }
         })
         if (!stores) {
-            throw new Error("Stores not found");
+            return 2;
         }
         const result = onMissions.map(onmission => {
             const mission = missions.find(mission => mission.id === onmission.missionId);
@@ -496,16 +515,16 @@ export const setOnMissionCompeleteRepos = async (
             select: {id: true, activated: true, isCompleted: true, updatedAt: true, deadline: true}
         })
         if (!cursorFinal) {
-            throw new Error("Cursor not found");
+            throw new NoSetOnMissionCompeleteError("Cursor is not found.", memberId, missionId);
         }
         if (cursorFinal.activated === false) {
-            throw new Error("The mission is not active.");
+            throw new NoSetOnMissionCompeleteError("The mission is not activated.", memberId, missionId);
         }
         if (cursorFinal.isCompleted === true) {
-            throw new Error("The mission is already completed.");
+            throw new NoSetOnMissionCompeleteError("The mission is already completed.", memberId, missionId);
         }
-        if (cursorFinal.deadline && new Date(cursorFinal.deadline) < new Date()) {
-            throw new Error("The mission is already expired.");
+        if (cursorFinal.deadline && cursorFinal.deadline < new Date()) {
+            throw new NoSetOnMissionCompeleteError("The mission is already expired.", memberId, missionId);
         }
         const result = await prisma.memberMission.update({
             where: {
