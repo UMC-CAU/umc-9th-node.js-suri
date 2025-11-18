@@ -13,6 +13,8 @@ import {
     handleMissionStart,
     handleSetMissionCompelete
 } from "./controller/mission.controller";
+import swaggerAutogen from "swagger-autogen";
+import swaggerUiExpress from "swagger-ui-express";
 
 
 dotenv.config();
@@ -30,6 +32,38 @@ app.use(express.json()); // parse JSON request bodies
 app.use(express.urlencoded({extended: false})); // parse urlencoded bodies
 app.use(morgan('dev'));
 app.use(cookieParser());
+app.use(
+    "/docs",
+    swaggerUiExpress.serve,
+    swaggerUiExpress.setup({}, {
+        swaggerOptions: {
+            url: "/openapi.json",
+        },
+    })
+);
+
+app.get("/openapi.json", async (req, res, next) => {
+    // #swagger.ignore = true
+    const options = {
+        openapi: "3.0.0",
+        disableLogs: true,
+        writeOutputFile: false,
+    };
+    const outputFile = "/dev/null"; // 파일 출력은 사용하지 않습니다.
+    const routes = ["./dist/index.js"];
+    const doc = {
+        info: {
+            title: "UMC 9th",
+            description: "UMC 9th Node.js 테스트 프로젝트입니다.",
+        },
+        host: "localhost:3000",
+    };
+
+    const result = await swaggerAutogen(options)(outputFile, routes, doc);
+    res.json(result ? result.data : null);
+});
+
+// ...
 
 
 // Health/root endpoint
@@ -63,15 +97,25 @@ app.use((req, res, next) => {
 
 
 // Routes
+// #swagger.tags = ['User']
 app.post("/api/v1/users/signup", handleUserSignUp);
+// #swagger.tags = ['Store']
 app.post("/api/v1/store/insert", handleStoreInsert);
+// #swagger.tags = ['Review']
 app.post("/api/v1/users/reveiws", handleInsertReview);
+// #swagger.tags = ['Mission']
 app.post("/api/v1/missions/insert", handleInsertMission);
+// #swagger.tags = ['Mission']
 app.post("/api/v1/member_mission/start", handleMissionStart);
+// #swagger.tags = ['Review']
 app.get("/api/v1/store/:storeId/review/", handleGetStoreReivew);
+// #swagger.tags = ['Review']
 app.get("/api/v1/member/:memberId/review/", handleGetMemberReview);
+// #swagger.tags = ['Mission']
 app.get("/api/v1/store/:storeId/mission/", handleGetStoreMission);
+// #swagger.tags = ['Mission']
 app.get("/api/v1/member/:memberId/member_mission/", handleGetOnMission);
+// #swagger.tags = ['Mission']
 app.patch("/api/v1/member/:memberId/mission/:missionId/setcompelete", handleSetMissionCompelete);
 
 interface CustomError extends Error {

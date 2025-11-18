@@ -48,9 +48,9 @@ export const listMemberReviews = async (
     try {
         const reviews = await getMemberReviews(memberId, cursor);
         if (!reviews) {
-            throw new NoListStoreReviewError("No members found", memberId)
+            throw new NoListStoreReviewError("유저를 찾을 수 없습니다.", memberId)
         } else if (reviews.length === 0) {
-            throw new NoListStoreReviewError("No reviews found", memberId)
+            throw new NoListStoreReviewError("리뷰를 찾을 수 없습니다.", memberId)
         }
         return reviews;
 
