@@ -102,7 +102,7 @@ export const handleInsertReview = async (
     try {
         console.log("Request Data : ", req.body);
 
-        const reviewData = bodyToReview(req.body);
+        const reviewData = bodyToReview(req.body); // Request body에 memberID가 있다고 가정하고 짠 API
         const result = await addMemReview(reviewData);
         res.success(result);
     } catch (err: any) {
@@ -112,7 +112,7 @@ export const handleInsertReview = async (
 };
 
 export const handleGetMemberReview = async (
-    req: Request<{ memberId: string }, unknown, unknown>,
+    req: Request,
     res: Response,
     _next: NextFunction,
 ): Promise<Response | void> => {
@@ -209,8 +209,12 @@ export const handleGetMemberReview = async (
     };
     */
     try {
+
         const cursor = parseInt(req.query.cursor as string || "0", 10);
-        const memberId = parseInt(req.params.memberId, 10);
+        if (!req.user) {
+            return res.status(401).json({message: "Unauthorized"});
+        }
+        const memberId = parseInt(req.user?.id.toString());
 
         const reviews = await listMemberReviews(
             memberId, cursor

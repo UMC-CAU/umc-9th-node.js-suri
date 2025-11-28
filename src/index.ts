@@ -3,7 +3,7 @@ import express, {NextFunction, Request, Response} from "express";
 import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-import {handleUserSignUp} from "./controller/user.controller";
+import {handleUserSignUp, handleUserUpdateLogin} from "./controller/user.controller";
 import {handleStoreInsert} from "./controller/store.controller";
 import {handleGetMemberReview, handleGetStoreReivew, handleInsertReview} from "./controller/review.controller";
 import {
@@ -15,6 +15,12 @@ import {
 } from "./controller/mission.controller";
 import swaggerAutogen from "swagger-autogen";
 import swaggerUiExpress from "swagger-ui-express";
+import passport from "passport";
+import {googleStrategy, jwtStrategy} from "./auth.config.js";
+import {authenticate} from "./middleware";
+
+
+passport.use(googleStrategy);
 
 
 dotenv.config();
@@ -41,6 +47,8 @@ app.use(
         },
     })
 );
+app.use(passport.initialize());
+passport.use(jwtStrategy);
 
 app.get("/openapi.json", async (req, res, next) => {
     // #swagger.ignore = true
@@ -96,27 +104,65 @@ app.use((req, res, next) => {
 });
 
 
+const isLogin = passport.authenticate('jwt', {session: false});
+
+app.get('/mypage', isLogin, (req, res) => {
+    if (!req.user) {
+        throw new Error("Request is not authenticated");
+    }
+    res.status(200).success({
+        message: `인증 성공! ${req.user.name}님의 마이페이지입니다.`,
+        user: req.user,
+    });
+});
+
+app.get("/oauth2/login/google",
+    passport.authenticate("google", {
+        session: false
+    })
+);
+app.get(
+    "/oauth2/callback/google",
+    passport.authenticate("google", {
+        session: false,
+        failureRedirect: "/login-failed",
+    }),
+    (req, res) => {
+        const tokens = req.user;
+
+        res.status(200).json({
+            resultType: "SUCCESS",
+            error: null,
+            success: {
+                message: "Google 로그인 성공!",
+                tokens: tokens, // { "accessToken": "...", "refreshToken": "..." }
+            }
+        });
+    }
+);
 // Routes
+
+app.post("/ouath2/login/google/updateUser", authenticate, handleUserUpdateLogin);
 // #swagger.tags = ['User']
 app.post("/api/v1/users/signup", handleUserSignUp);
 // #swagger.tags = ['Store']
 app.post("/api/v1/store/insert", handleStoreInsert);
 // #swagger.tags = ['Review']
-app.post("/api/v1/users/reveiws", handleInsertReview);
+app.post("/api/v1/users/reveiws", authenticate, handleInsertReview);
 // #swagger.tags = ['Mission']
 app.post("/api/v1/missions/insert", handleInsertMission);
 // #swagger.tags = ['Mission']
-app.post("/api/v1/member_mission/start", handleMissionStart);
+app.post("/api/v1/member_mission/start", authenticate, handleMissionStart);
 // #swagger.tags = ['Review']
 app.get("/api/v1/store/:storeId/review/", handleGetStoreReivew);
 // #swagger.tags = ['Review']
-app.get("/api/v1/member/:memberId/review/", handleGetMemberReview);
+app.get("/api/v1/member/:memberId/review/", authenticate, handleGetMemberReview);
 // #swagger.tags = ['Mission']
 app.get("/api/v1/store/:storeId/mission/", handleGetStoreMission);
 // #swagger.tags = ['Mission']
-app.get("/api/v1/member/:memberId/member_mission/", handleGetOnMission);
+app.get("/api/v1/member/:memberId/member_mission/", authenticate, handleGetOnMission);
 // #swagger.tags = ['Mission']
-app.patch("/api/v1/member/:memberId/mission/:missionId/setcompelete", handleSetMissionCompelete);
+app.patch("/api/v1/member/:memberId/mission/:missionId/setcompelete", authenticate, handleSetMissionCompelete);
 
 interface CustomError extends Error {
     status?: number;

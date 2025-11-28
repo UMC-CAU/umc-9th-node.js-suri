@@ -1,6 +1,6 @@
 import {prisma} from "../db.config";
 import {createHash} from "crypto"
-import {memberEntityDB} from "../dtos/user.dtos";
+import {memberEntityDB, userUpdateLoginPayload} from "../dtos/user.dtos";
 
 // Payload used to insert a user into DB (subset of memberBodyToDTO)
 export interface UserInsertPayload {
@@ -17,6 +17,7 @@ export interface UserInsertPayload {
     updatedAt: Date;
     lastLogin: Date;
 }
+
 
 // Add new user; returns inserted ID or null if email already exists
 export const addUser = async (
@@ -59,6 +60,35 @@ export const addUser = async (
         );
     }
 };
+
+export const userUpdateLogin = async (
+    userId: number,
+    data: userUpdateLoginPayload,
+): Promise<void> => {
+    try {
+        const safeDate = (value?: Date | null) => (value && !Number.isNaN(value.getTime()) ? value : undefined);
+        const safeString = (value?: string | null) => (value === null || value === undefined || value.trim() === "" ? undefined : value);
+        const safeNumber = (value?: number | null) => (value === null || value === undefined ? undefined : Number(value));
+
+        await prisma.member.update({
+            where: {id: userId},
+            data: {
+                nickname: safeString(data.nickname ?? null),
+                gender: safeString(data.gender ?? null),
+                birthdate: safeDate(data.birthdate ?? null),
+                phoneNumber: safeString(data.phoneNumber ?? null),
+                status: data.status === null || data.status === undefined ? undefined : String(data.status),
+                point: safeNumber(data.point ?? null),
+                createdAt: safeDate(data.createdAt ?? null),
+                updatedAt: new Date(),
+                lastLogin: safeDate(data.lastLogin ?? null) ?? new Date(),
+            },
+        });
+
+    } catch (err: any) {
+        throw new Error("로그인 정보 업데이트 중 오류가 발생했습니다. {" + err + "}");
+    }
+}
 
 // Get single user by id
 export const getUser = async (userId: number): Promise<memberEntityDB | null> => {
