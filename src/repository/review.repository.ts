@@ -61,14 +61,14 @@ export const getMemberReviews = async (
                 orderBy: {id: "asc"},
                 take: 5
             }
-        )
+        ) as Array<{ grade: string | null; description: string | null; createdAt: Date | null; storeId: bigint }>;
         const stores = await prisma.store.findMany({
-            where: {id: {in: reviews.map(review => review.storeId)}},
+            where: {id: {in: reviews.map((review) => review.storeId)}},
             select: {name: true, id: true}
-        })
+        }) as Array<{ name: string | null; id: bigint }>;
 
-        const result = reviews.map(review => {
-            const storeObj = stores.find(store => store.id === review.storeId);
+        const result = reviews.map((review) => {
+            const storeObj = stores.find((store) => store.id === review.storeId);
             return {
                 nickname: member.nickname ? String(member.nickname) : null,
                 store_name: storeObj ? String(storeObj.name) : "",

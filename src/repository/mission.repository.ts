@@ -103,7 +103,15 @@ export const getOnMissionRepos = async (
             },
             orderBy: {id: "asc"},
             take: 5
-        })
+        }) as Array<{
+            id: bigint;
+            memberId: bigint;
+            missionId: bigint;
+            createdAt: Date | null;
+            deadline: Date | null;
+            activated: boolean | null;
+            isCompleted: boolean | null;
+        }>;
         if (!onMissions) {
             return 0;
         }
@@ -111,7 +119,13 @@ export const getOnMissionRepos = async (
             where: {
                 id: {in: onMissions.map(mission => mission.missionId)}
             }
-        })
+        }) as Array<{
+            id: bigint;
+            title: string | null;
+            description: string | null;
+            pointReward: bigint | null;
+            storeId: bigint | null;
+        }>;
         if (!missions) {
             return 1;
         }
@@ -123,13 +137,13 @@ export const getOnMissionRepos = async (
                         .filter((storeId): storeId is bigint => storeId !== null)
                 }
             }
-        })
+        }) as Array<{ id: bigint; name: string | null }>;
         if (!stores) {
             return 2;
         }
-        const result = onMissions.map(onmission => {
-            const mission = missions.find(mission => mission.id === onmission.missionId);
-            const store = stores.find(store => store.id === mission?.storeId);
+        const result = onMissions.map((onmission) => {
+            const mission = missions.find((mission) => mission.id === onmission.missionId);
+            const store = stores.find((store) => store.id === mission?.storeId);
             return {
                 id: Number(onmission.id),
                 member_id: Number(onmission.memberId),

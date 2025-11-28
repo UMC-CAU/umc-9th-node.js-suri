@@ -1,7 +1,9 @@
 import type {NextFunction, Request, Response} from "express";
+import {StatusCodes} from "http-status-codes";
 
-import {bodyToUser} from "../dtos/user.dtos";
-import {userSignUp,} from "../service/user.service";
+import {bodyToUser, bodyToUserUpdate} from "../dtos/user.dtos";
+import {AuthenticatedRequest} from "../types/auth";
+import {loginUser, updateUserProfile, userSignUp,} from "../service/user.service";
 
 export const handleUserSignUp = async (
     req: Request<{}, unknown, unknown>,
@@ -139,9 +141,58 @@ export const handleUserSignUp = async (
       }
     };
     */
-    console.log("회원가입을 요청했습니다!");
-    console.log("body:", req.body);
+    try {
+        console.log("회원가입을 요청했습니다!");
+        console.log("body:", req.body);
 
-    const user = await userSignUp(bodyToUser(req.body));
-    res.success(user);
+        const user = await userSignUp(bodyToUser(req.body));
+        res.success(user);
+    } catch (err: any) {
+        res
+            .status(StatusCodes.BAD_REQUEST)
+            .error({errorCode: err?.errorCode ?? "U999", reason: err?.message});
+    }
+};
+
+export const handleUserLogin = async (
+    req: Request,
+    res: Response,
+): Promise<void> => {
+    const {email, password} = req.body as { email?: string; password?: string };
+
+    if (!email || !password) {
+        res
+            .status(StatusCodes.BAD_REQUEST)
+            .error({errorCode: "AUTH003", reason: "이메일과 비밀번호를 입력해주세요."});
+        return;
+    }
+
+    try {
+        const loginResult = await loginUser(email, password);
+        res.success(loginResult);
+    } catch (err: any) {
+        res
+            .status(StatusCodes.UNAUTHORIZED)
+            .error({errorCode: err?.errorCode ?? "AUTH004", reason: err?.reason ?? err?.message});
+    }
+};
+
+export const handleUpdateProfile = async (
+    req: AuthenticatedRequest,
+    res: Response,
+): Promise<void> => {
+    if (!req.user) {
+        res.status(StatusCodes.UNAUTHORIZED).error({errorCode: "AUTH001", reason: "로그인이 필요합니다."});
+        return;
+    }
+
+    try {
+        const updatePayload = bodyToUserUpdate(req.body);
+        const updated = await updateUserProfile(req.user.id, updatePayload);
+        res.success(updated);
+    } catch (err: any) {
+        res
+            .status(StatusCodes.BAD_REQUEST)
+            .error({errorCode: err?.errorCode ?? "U998", reason: err?.message});
+    }
 };

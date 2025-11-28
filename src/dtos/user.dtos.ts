@@ -51,10 +51,23 @@ export interface UserResponseDTO {
     preferences: Array<PreferenceRow> | null | undefined;
 }
 
+export interface MemberUpdateDTO {
+    email?: string;
+    name?: string;
+    nickname?: string | null;
+    gender?: string;
+    birthdate?: Date;
+    phoneNumber?: string;
+    password?: string;
+    preferences?: unknown;
+}
+
 export const bodyToUser = (body: unknown): memberBodyToDTO => {
     if (body === null || body === undefined || typeof body !== "object")
         throw new Error("body is null or undefined or not an object");
     const b = body as any;
+
+    const phoneNumber = b.phoneNumber ?? b.phone_number;
 
     if (
         b.email === null ||
@@ -71,7 +84,7 @@ export const bodyToUser = (body: unknown): memberBodyToDTO => {
         nickname: String(b.nickname),
         gender: String(b.gender),
         birthdate,
-        phoneNumber: String(b.phone_number),
+        phoneNumber: String(phoneNumber),
         password: String(b.password),
         preferences: b.preferences,
         status: Boolean(b.status),
@@ -79,6 +92,41 @@ export const bodyToUser = (body: unknown): memberBodyToDTO => {
         createdAt: new Date(),
         updatedAt: new Date(),
         lastLogin: new Date(),
+    };
+};
+
+export const bodyToUserUpdate = (body: unknown): MemberUpdateDTO => {
+    if (body === null || body === undefined || typeof body !== "object") {
+        throw new Error("body is null or undefined or not an object");
+    }
+
+    const b = body as any;
+    const phoneNumber = b.phoneNumber ?? b.phone_number;
+    const hasAnyField = [
+        "email",
+        "name",
+        "nickname",
+        "gender",
+        "birthdate",
+        "phoneNumber",
+        "password",
+        "preferences",
+        "phone_number",
+    ].some((key) => b[key] !== undefined);
+
+    if (!hasAnyField) {
+        throw new Error("No updatable fields were provided.");
+    }
+
+    return {
+        email: b.email ? String(b.email) : undefined,
+        name: b.name ? String(b.name) : undefined,
+        nickname: b.nickname !== undefined ? String(b.nickname) : undefined,
+        gender: b.gender ? String(b.gender) : undefined,
+        birthdate: b.birthdate ? new Date(b.birthdate) : undefined,
+        phoneNumber: phoneNumber ? String(phoneNumber) : undefined,
+        password: b.password ? String(b.password) : undefined,
+        preferences: b.preferences,
     };
 };
 
