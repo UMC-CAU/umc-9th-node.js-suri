@@ -221,7 +221,7 @@ export const handleMissionStart = async (
 };
 
 export const handleGetOnMission = async (
-    req: Request<{ memberId: string }, unknown, unknown>,
+    req: Request,
     res: Response,
     _next: NextFunction): Promise<Response | void> => {
     /*
@@ -323,7 +323,10 @@ export const handleGetOnMission = async (
     */
     try {
         const cursor = parseInt(req.query.cursor as string || "0", 10);
-        const memberId = parseInt(req.params.memberId, 10);
+        if (!req.user) {
+            return res.status(400).json({message: "Bad Request"});
+        }
+        const memberId = parseInt(req.user?.id.toString());
 
         const onMissions = await getOnMemMission(memberId, cursor);
         res.success(onMissions);
@@ -335,7 +338,7 @@ export const handleGetOnMission = async (
 }
 
 export const handleSetMissionCompelete = async (
-    req: Request<{ memberId: string, missionId: string }, unknown, unknown>,
+    req: Request,
     res: Response,
     _next: NextFunction,
 ): Promise<Response | void> => {
@@ -411,7 +414,10 @@ export const handleSetMissionCompelete = async (
     };
     */
     try {
-        const memberId = parseInt(req.params.memberId, 10);
+        if (!req.user) {
+            return res.status(400).json({message: "Bad Request"});
+        }
+        const memberId = parseInt(req.user.id.toString());
         const missionId = parseInt(req.params.missionId, 10);
         const cursor = parseInt(req.query.cursor as string || "0", 10);
         const cursorBigInt = BigInt(cursor);
