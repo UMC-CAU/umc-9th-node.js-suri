@@ -3,7 +3,7 @@ import express, {NextFunction, Request, Response} from "express";
 import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-import {handleUserSignUp} from "./controller/user.controller";
+import {handleUpdateMe, handleUserLogin, handleUserSignUp} from "./controller/user.controller";
 import {handleStoreInsert} from "./controller/store.controller";
 import {handleGetMemberReview, handleGetStoreReivew, handleInsertReview} from "./controller/review.controller";
 import {
@@ -15,6 +15,7 @@ import {
 } from "./controller/mission.controller";
 import swaggerAutogen from "swagger-autogen";
 import swaggerUiExpress from "swagger-ui-express";
+import {authenticate} from "./middleware/auth.middleware";
 
 
 dotenv.config();
@@ -99,24 +100,26 @@ app.use((req, res, next) => {
 // Routes
 // #swagger.tags = ['User']
 app.post("/api/v1/users/signup", handleUserSignUp);
+app.post("/api/v1/auth/login", handleUserLogin);
+app.patch("/api/v1/users/me", authenticate, handleUpdateMe);
 // #swagger.tags = ['Store']
-app.post("/api/v1/store/insert", handleStoreInsert);
+app.post("/api/v1/store/insert", authenticate, handleStoreInsert);
 // #swagger.tags = ['Review']
-app.post("/api/v1/users/reveiws", handleInsertReview);
+app.post("/api/v1/users/reveiws", authenticate, handleInsertReview);
 // #swagger.tags = ['Mission']
-app.post("/api/v1/missions/insert", handleInsertMission);
+app.post("/api/v1/missions/insert", authenticate, handleInsertMission);
 // #swagger.tags = ['Mission']
-app.post("/api/v1/member_mission/start", handleMissionStart);
+app.post("/api/v1/member_mission/start", authenticate, handleMissionStart);
 // #swagger.tags = ['Review']
 app.get("/api/v1/store/:storeId/review/", handleGetStoreReivew);
 // #swagger.tags = ['Review']
-app.get("/api/v1/member/:memberId/review/", handleGetMemberReview);
+app.get("/api/v1/member/:memberId/review/", authenticate, handleGetMemberReview);
 // #swagger.tags = ['Mission']
 app.get("/api/v1/store/:storeId/mission/", handleGetStoreMission);
 // #swagger.tags = ['Mission']
-app.get("/api/v1/member/:memberId/member_mission/", handleGetOnMission);
+app.get("/api/v1/member/:memberId/member_mission/", authenticate, handleGetOnMission);
 // #swagger.tags = ['Mission']
-app.patch("/api/v1/member/:memberId/mission/:missionId/setcompelete", handleSetMissionCompelete);
+app.patch("/api/v1/member/:memberId/mission/:missionId/setcompelete", authenticate, handleSetMissionCompelete);
 
 interface CustomError extends Error {
     status?: number;

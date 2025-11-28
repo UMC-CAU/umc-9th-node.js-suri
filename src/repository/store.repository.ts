@@ -49,14 +49,14 @@ export const getStoreReviews = async (storeId: number, cursor: number): Promise<
                 orderBy: {id: "asc"},
                 take: 5
             }
-        )
+        ) as Array<{ grade: string | null; description: string | null; createdAt: Date | null; memberId: bigint }>
         const nicknames = await prisma.member.findMany({
-            where: {id: {in: reviews.map(review => review.memberId)}},
+            where: {id: {in: reviews.map((review: { memberId: bigint }) => review.memberId)}},
             select: {nickname: true, id: true}
-        })
+        }) as Array<{ id: bigint; nickname: string | null }>;
 
-        const result = reviews.map(review => {
-            const nicknameObj = nicknames.find(nick => nick.id === review.memberId);
+        const result = reviews.map((review: { grade: string | null; description: string | null; createdAt: Date | null; memberId: bigint }) => {
+            const nicknameObj = nicknames.find((nick: { id: bigint; nickname: string | null }) => nick.id === review.memberId);
             return {
                 nickname: nicknameObj ? String(nicknameObj.nickname) : null,
                 store_name: String(store.name),
@@ -102,8 +102,8 @@ export const getMissionFromStore = async (
             },
             orderBy: {id: "asc"},
             take: 5
-        })
-        const result = missions.map(mission => ({
+        }) as Array<{ id: bigint; title: string | null; description: string | null; pointReward: bigint | null }>;
+        const result = missions.map((mission: { id: bigint; title: string | null; description: string | null; pointReward: bigint | null }) => ({
             id: Number(mission.id),
             title: String(mission.title),
             description: String(mission.description),

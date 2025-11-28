@@ -38,23 +38,22 @@ export interface MemberMissionCreateDTO {
     updated_at: string | Date;
 }
 
-export const bodyToMemberMission = (body: unknown): MemberMissionCreateDTO => {
+export const bodyToMemberMission = (body: unknown, memberId: number): MemberMissionCreateDTO => {
     if (body === null || body === undefined || typeof body !== "object") {
         throw new Error("body is null or undefined or not an object");
     }
     const b = body as any;
-    if (b.member_id === undefined || b.mission_id === undefined) {
-        throw new Error("The following fields are missing: member_id, mission_id");
+    if (b.mission_id === undefined) {
+        throw new Error("The following fields are missing: mission_id");
     }
     return {
-        member_id: Number(b.member_id),
+        member_id: Number(memberId),
         mission_id: Number(b.mission_id),
-        address: String(b.address) ?? null,
+        address: b.address === undefined ? null : String(b.address),
         is_completed: b.is_completed ?? 0,
-        deadline: b.deadline,
-        activated: b.activated,
-        created_at: b.created_at,
-        updated_at: b.updated_at,
+        deadline: b.deadline ?? new Date(),
+        activated: b.activated ?? true,
+        created_at: b.created_at ?? new Date(),
+        updated_at: b.updated_at ?? new Date(),
     };
 };
-
