@@ -17,6 +17,7 @@ import swaggerAutogen from "swagger-autogen";
 import swaggerUiExpress from "swagger-ui-express";
 import passport from "passport";
 import {googleStrategy, jwtStrategy} from "./auth.config.js";
+import {authenticate} from "./middleware";
 
 
 passport.use(googleStrategy);
@@ -145,21 +146,21 @@ app.post("/api/v1/users/signup", handleUserSignUp);
 // #swagger.tags = ['Store']
 app.post("/api/v1/store/insert", handleStoreInsert);
 // #swagger.tags = ['Review']
-app.post("/api/v1/users/reveiws", handleInsertReview);
+app.post("/api/v1/users/reveiws", authenticate, handleInsertReview);
 // #swagger.tags = ['Mission']
 app.post("/api/v1/missions/insert", handleInsertMission);
 // #swagger.tags = ['Mission']
-app.post("/api/v1/member_mission/start", handleMissionStart);
+app.post("/api/v1/member_mission/start", authenticate, handleMissionStart);
 // #swagger.tags = ['Review']
 app.get("/api/v1/store/:storeId/review/", handleGetStoreReivew);
 // #swagger.tags = ['Review']
-app.get("/api/v1/member/:memberId/review/", handleGetMemberReview);
+app.get("/api/v1/member/:memberId/review/", authenticate, handleGetMemberReview);
 // #swagger.tags = ['Mission']
 app.get("/api/v1/store/:storeId/mission/", handleGetStoreMission);
 // #swagger.tags = ['Mission']
-app.get("/api/v1/member/:memberId/member_mission/", handleGetOnMission);
+app.get("/api/v1/member/:memberId/member_mission/", authenticate, handleGetOnMission);
 // #swagger.tags = ['Mission']
-app.patch("/api/v1/member/:memberId/mission/:missionId/setcompelete", handleSetMissionCompelete);
+app.patch("/api/v1/member/:memberId/mission/:missionId/setcompelete", authenticate, handleSetMissionCompelete);
 
 interface CustomError extends Error {
     status?: number;
