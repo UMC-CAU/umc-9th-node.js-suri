@@ -3,7 +3,7 @@ import express, {NextFunction, Request, Response} from "express";
 import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-import {handleUserSignUp} from "./controller/user.controller";
+import {handleUserSignUp, handleUserUpdateLogin} from "./controller/user.controller";
 import {handleStoreInsert} from "./controller/store.controller";
 import {handleGetMemberReview, handleGetStoreReivew, handleInsertReview} from "./controller/review.controller";
 import {
@@ -141,6 +141,8 @@ app.get(
     }
 );
 // Routes
+
+app.post("/ouath2/login/google/updateUser", authenticate, handleUserUpdateLogin);
 // #swagger.tags = ['User']
 app.post("/api/v1/users/signup", handleUserSignUp);
 // #swagger.tags = ['Store']

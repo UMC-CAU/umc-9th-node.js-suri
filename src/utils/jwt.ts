@@ -8,6 +8,7 @@ export interface AuthTokenPayload {
 
 }
 
+
 const base64UrlEncode = (input: string | Buffer): string =>
     Buffer.from(input).toString("base64url");
 
@@ -47,9 +48,21 @@ export const verifyToken = (token: string): AuthTokenPayload => {
         .update(data)
         .digest("base64url");
 
-    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+    const providedSig = Buffer.from(signature, "base64url");
+    const expectedSig = Buffer.from(expectedSignature, "base64url");
+
+    if (
+        providedSig.length !== expectedSig.length ||
+        !crypto.timingSafeEqual(providedSig, expectedSig)
+    ) {
         throw new Error("Invalid token signature");
     }
+
+    /*if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+        throw new Error("Invalid token signature");
+    }
+
+     */
 
     const payload = JSON.parse(base64UrlDecode(encodedBody).toString()) as AuthTokenPayload;
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {

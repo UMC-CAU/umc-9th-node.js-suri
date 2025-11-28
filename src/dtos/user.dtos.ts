@@ -5,6 +5,18 @@
 
 import {PreferenceRow} from "../repository/user.repository";
 
+const normalizeNullableString = (value: unknown): string | null => {
+    if (value === null || value === undefined) return null;
+    const str = String(value).trim();
+    return str.length ? str : null;
+};
+
+const normalizeNullableDate = (value: unknown): Date | null => {
+    if (!value) return null;
+    const date = value instanceof Date ? value : new Date(value.toString());
+    return Number.isNaN(date.getTime()) ? null : date;
+};
+
 export interface memberEntityDB {
     id: number;
     email: string;
@@ -49,6 +61,19 @@ export interface UserResponseDTO {
     point: number;
     status: boolean;
     preferences: Array<PreferenceRow> | null | undefined;
+}
+
+export interface userUpdateLoginPayload {
+
+    nickname?: string | null;
+    gender?: string | null;
+    birthdate?: Date | null;
+    phoneNumber?: string | null;
+    status?: string | boolean | null;
+    point?: number | null;
+    createdAt?: Date | null;
+    updatedAt?: Date | null;
+    lastLogin?: Date | null;
 }
 
 export const bodyToUser = (body: unknown): memberBodyToDTO => {
@@ -105,3 +130,21 @@ export const responseFromUser = async ({
         preferences: preferences
     };
 };
+
+export const bodyToUserUpdateLogin = (body: unknown): userUpdateLoginPayload => {
+    if (body === null || body === undefined || typeof body !== "object")
+        throw new Error("body is null or undefined or not an object");
+    const b = body as any;
+
+    return {
+        nickname: normalizeNullableString(b.nickname),
+        gender: normalizeNullableString(b.gender),
+        birthdate: normalizeNullableDate(b.birthdate),
+        phoneNumber: normalizeNullableString(b.phone_number ?? b.phoneNumber),
+        status: b.status === null || b.status === undefined ? null : Boolean(b.status),
+        point: b.point === null || b.point === undefined ? null : Number(b.point),
+        createdAt: normalizeNullableDate(b.createdAt),
+        updatedAt: normalizeNullableDate(b.updatedAt),
+        lastLogin: normalizeNullableDate(b.lastLogin),
+    };
+}

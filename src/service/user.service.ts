@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import type {memberBodyToDTO, memberEntityDB, UserResponseDTO,} from "../dtos/user.dtos";
+import type {memberBodyToDTO, memberEntityDB, UserResponseDTO, userUpdateLoginPayload,} from "../dtos/user.dtos";
 import {responseFromUser} from "../dtos/user.dtos";
 
 import {
@@ -8,6 +8,7 @@ import {
     getUserPreferencesByUserId,
     PreferenceRow,
     setPreference,
+    userUpdateLogin,
 } from "../repository/user.repository";
 import {DuplicateEmailError, NoPreferenceError,} from "../error";
 
@@ -62,3 +63,19 @@ export const userSignUp = async (
 
     return await responseFromUser({user, preferences});
 };
+export const userUpdateLoginSevice = async (
+    userId: number,
+    data: userUpdateLoginPayload
+): Promise<UserResponseDTO> => {
+
+    await userUpdateLogin(userId, data);
+    const resultUser = await getUser(userId);
+    if (!resultUser) {
+        throw new Error("업데이트한 유저를 찾을 수 없습니다.");
+    }
+
+    const preferences = await getUserPreferencesByUserId(userId);
+    const returnUser = await responseFromUser({user: resultUser, preferences: preferences});
+    return returnUser;
+
+}

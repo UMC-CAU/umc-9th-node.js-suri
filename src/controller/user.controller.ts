@@ -1,7 +1,7 @@
 import type {NextFunction, Request, Response} from "express";
 
-import {bodyToUser} from "../dtos/user.dtos";
-import {userSignUp,} from "../service/user.service";
+import {bodyToUser, bodyToUserUpdateLogin} from "../dtos/user.dtos";
+import {userSignUp, userUpdateLoginSevice,} from "../service/user.service";
 
 export const handleUserSignUp = async (
     req: Request<{}, unknown, unknown>,
@@ -145,3 +145,26 @@ export const handleUserSignUp = async (
     const user = await userSignUp(bodyToUser(req.body));
     res.success(user);
 };
+
+export const handleUserUpdateLogin = async (
+    req: Request,
+    res: Response,
+    _next: NextFunction,
+): Promise<void> => {
+    /*
+    #swagger.summary = '사용자 마지막 로그인 시간 업데이트 API';
+    #swagger.description = '사용자의 마지막 로그인 시간을 현재 시간으로 업데이트합니다.';
+    #swagger.tags = ['User'];
+    #swagger.responses[200] = {
+      description: "마지막 로그인 시간 업데이트 성공 응답",
+
+
+     */
+    console.log("사용자 마지막 로그인 업데이트를 요청했습니다!");
+    const userId = req.user?.id;
+    if (!userId) {
+        throw new Error("Request is not authenticated");
+    }
+    const user = await userUpdateLoginSevice(userId, bodyToUserUpdateLogin(req.body));
+    res.success(user);
+}
