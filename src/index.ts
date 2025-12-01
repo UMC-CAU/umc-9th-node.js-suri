@@ -185,5 +185,5 @@ app.use((err: CustomError, req: Request, res: Response, _next: NextFunction) => 
 
 // Start server
 app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`);
+    console.log(`Server is running at http://localhost:${port}`);
 });
